@@ -1,0 +1,84 @@
+﻿@if (SelectedJob != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55); backdrop-filter: blur(2px);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 rounded-4 p-3 shadow-lg">
+                <div class="modal-header border-0 pb-1">
+                    <div>
+                        <h4 class="modal-title fw-bold text-dark tracking-tight">Apply for @SelectedJob.Title</h4>
+                        <p class="text-muted small mb-0">Company: <span class="fw-semibold text-primary">@SelectedJob.Company</span></p>
+                    </div>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
+                                <input type="text" class="form-control custom-input" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
+                                <input type="email" class="form-control custom-input" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Phone Number</label>
+                                <input type="tel" class="form-control custom-input" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Expected Salary (Optional)</label>
+                                <input type="text" class="form-control custom-input" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Attach Resume / CV (PDF or Docx)</label>
+                                <input type="file" class="form-control custom-input" accept=".pdf,.doc,.docx" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Cover Letter / Note to Recruiter</label>
+                                <textarea class="form-control custom-input" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer border-0 pt-2">
+                    <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 text-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="button" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" @onclick="SubmitModal">
+                        <i class="bi bi-send-fill me-2"></i>Submit Application
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .custom-input {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+        color: #1e293b;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .custom-input:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+            background-color: #fff;
+        }
+
+    .tracking-tight {
+        letter-spacing: -0.02em;
+    }
+</style>
+
+@code {
+    [Parameter] public BrowseJobs.JobModel? SelectedJob { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    private async Task CloseModal() => await OnClose.InvokeAsync();
+    private async Task SubmitModal() => await OnSubmit.InvokeAsync();
+}
