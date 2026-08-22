@@ -1,0 +1,98 @@
+﻿@page "/register"
+
+<PageTitle>Register - WorkWave</PageTitle>
+
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-3">
+            <div class="card-body p-4 p-sm-5">
+
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-primary">Create Account</h3>
+                    <p class="text-muted small">Join WorkWave to find or post opportunities</p>
+                </div>
+
+                <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration">
+                    <DataAnnotationsValidator />
+
+                    <!-- User Role Selection -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">I want to:</label>
+                        <InputSelect @bind-Value="registerModel.Role" class="form-select">
+                            <option value="Student">Apply for Jobs (Student/Freelancer)</option>
+                            <option value="Client">Post Jobs (Client/Employer)</option>
+                        </InputSelect>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <InputText @bind-Value="registerModel.FullName" class="form-control" placeholder="Enter your name" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.FullName)" class="text-danger small" />
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-envelope"></i></span>
+                            <InputText @bind-Value="registerModel.Email" class="form-control" placeholder="name@example.com" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.Email)" class="text-danger small" />
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                            <InputText @bind-Value="registerModel.Password" type="password" class="form-control" placeholder="••••••••" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.Password)" class="text-danger small" />
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-shield-lock"></i></span>
+                            <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" placeholder="••••••••" />
+                        </div>
+                        <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger small" />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Register</button>
+                </EditForm>
+
+                <div class="text-center mt-4">
+                    <span class="text-muted small">Already have an account? </span>
+                    <a href="login" class="text-primary fw-bold text-decoration-none small">Login here</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new RegisterModel();
+
+    private void HandleRegistration()
+    {
+        // Backend API Integration point
+        Console.WriteLine($"Registering User: {registerModel.FullName}, Role: {registerModel.Role}");
+    }
+
+    public class RegisterModel
+    {
+        public string Role { get; set; } = "Student";
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}
