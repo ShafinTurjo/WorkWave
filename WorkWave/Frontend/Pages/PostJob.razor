@@ -1,0 +1,163 @@
+﻿@page "/post-job"
+@page "/post-a-job"
+@inject NavigationManager Navigation
+
+<div class="bg-light-subtle min-vh-100 py-5">
+    <div class="container" style="max-width: 760px;">
+
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-2">
+                <i class="bi bi-building-add me-1"></i> Employers Hub
+            </span>
+            <h2 class="fw-extrabold text-dark display-6">Post a New Job Opening</h2>
+            <p class="text-secondary fs-6">Fill out the form below to publish your job position.</p>
+        </div>
+
+        <!-- Success Alert -->
+        @if (isSubmitted)
+        {
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
+                <div>
+                    <h6 class="fw-bold mb-0">Job Posted Successfully!</h6>
+                    <small>Redirecting you to job listings...</small>
+                </div>
+            </div>
+        }
+
+        <!-- Form Card -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+            <EditForm Model="newJob" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <!-- Job Title -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Job Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-lg custom-input" @bind-value="newJob.Title" required />
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- Company Name -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Company Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control custom-input" @bind-value="newJob.Company" required />
+                    </div>
+                    <!-- Category -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Category <span class="text-danger">*</span></label>
+                        <select class="form-select custom-input" @bind="newJob.Category" required>
+                            <option value="">Select Category</option>
+                            <option value="IT & Software">IT & Software</option>
+                            <option value="Customer Support">Customer Support</option>
+                            <option value="Sales & Marketing">Sales & Marketing</option>
+                            <option value="Office Admin">Office Admin</option>
+                            <option value="Delivery & Logistics">Delivery & Logistics</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- Location -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Location <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control custom-input" @bind-value="newJob.Location" required />
+                    </div>
+                    <!-- Salary Range -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Salary Range <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control custom-input" @bind-value="newJob.Salary" required />
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- Job Type -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Job Type <span class="text-danger">*</span></label>
+                        <select class="form-select custom-input" @bind="newJob.JobType" required>
+                            <option value="Full-Time">Full-Time</option>
+                            <option value="Part-Time">Part-Time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Internship">Internship</option>
+                        </select>
+                    </div>
+                    <!-- Skills / Tags -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark small">Key Skills / Tags</label>
+                        <input type="text" class="form-control custom-input" @bind-value="tagsInput" />
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark small">Job Description & Requirements <span class="text-danger">*</span></label>
+                    <textarea class="form-control custom-input" rows="5" @bind="newJob.Description" required></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-end gap-3 pt-2">
+                    <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 border" @onclick='() => Navigation.NavigateTo("browse-jobs")'>Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm">
+                        <i class="bi bi-send-check me-1"></i> Publish Job
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-light-subtle {
+        background-color: #f8fafc !important;
+    }
+
+    .fw-extrabold {
+        font-weight: 800;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+    }
+
+    .custom-input {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.95rem;
+        background-color: #ffffff;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .custom-input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+            background-color: #ffffff;
+        }
+</style>
+
+@code {
+    private PostJobModel newJob = new PostJobModel();
+    private string tagsInput = "";
+    private bool isSubmitted = false;
+
+    private async Task HandleSubmit()
+    {
+        isSubmitted = true;
+        StateHasChanged();
+
+        await Task.Delay(1500);
+        Navigation.NavigateTo("browse-jobs");
+    }
+
+    public class PostJobModel
+    {
+        public string Title { get; set; } = "";
+        public string Company { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string Salary { get; set; } = "";
+        public string JobType { get; set; } = "Full-Time";
+        public string Description { get; set; } = "";
+    }
+}
