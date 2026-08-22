@@ -1,0 +1,81 @@
+@page "/job/{JobId:int}"
+@inject NavigationManager Navigation
+
+<div class="bg-light-subtle min-vh-100 py-5">
+    <div class="container" style="max-width: 800px;">
+
+        @if (job == null)
+        {
+            <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                <i class="bi bi-emoji-frown text-muted display-4"></i>
+                <h4 class="mt-3 text-secondary">Job not found</h4>
+                <a href="browse-jobs" class="btn btn-primary mt-3 fw-bold px-4 rounded-3">Back to Jobs</a>
+            </div>
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-3" style="width: fit-content;">
+                    @job.Category
+                </span>
+
+                <h2 class="fw-bold text-dark mb-2">@job.Title</h2>
+                <p class="text-muted mb-3">
+                    <i class="bi bi-building me-1"></i>@job.Company
+                    &nbsp;&nbsp;|&nbsp;&nbsp;
+                    <i class="bi bi-geo-alt-fill me-1 text-danger"></i>@job.Location
+                </p>
+
+                <h5 class="text-success fw-bold mb-4">@job.Salary</h5>
+
+                <hr />
+
+                <h6 class="fw-bold text-dark mb-2">Job Description</h6>
+                <p class="text-secondary">@job.Description</p>
+
+                <h6 class="fw-bold text-dark mb-2 mt-3">Skills / Tags</h6>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    @foreach (var tag in job.Tags)
+                    {
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-2">@tag</span>
+                    }
+                </div>
+
+                <div class="d-flex gap-3">
+                    <button class="btn btn-light fw-bold px-4 py-2 rounded-3 border" @onclick='() => Navigation.NavigateTo("browse-jobs")'>
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </button>
+                    <button class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" @onclick="() => showApply = true">
+                        Apply Now <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <ApplyModal SelectedJob="showApply ? job : null"
+                        OnClose="() => showApply = false"
+                        OnSubmit="() => showApply = false" />
+        }
+    </div>
+</div>
+
+<style>
+    .bg-light-subtle {
+        background-color: #f8fafc !important;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e0f2fe !important;
+        color: #0284c7 !important;
+    }
+</style>
+
+@code {
+    [Parameter] public int JobId { get; set; }
+    private JobModel? job;
+    private bool showApply = false;
+
+    protected override void OnInitialized()
+    {
+        job = JobData.GetById(JobId);
+    }
+}
