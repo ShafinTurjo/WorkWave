@@ -1,4 +1,8 @@
-﻿
+﻿@using Frontend.Services
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@implements IDisposable
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold text-primary fs-4" href="">
@@ -32,8 +36,19 @@
             </ul>
 
             <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-outline-light px-3" href="login">Login</a>
-                <a class="btn btn-primary px-3" href="register">Register</a>
+                @if (AuthState.IsLoggedIn)
+                {
+                    <span class="text-light d-inline-flex align-items-center me-2">
+                        <i class="bi bi-person-circle me-2"></i>
+                        @AuthState.FullName
+                    </span>
+                    <button class="btn btn-outline-light px-3" @onclick="HandleLogout">Logout</button>
+                }
+                else
+                {
+                    <a class="btn btn-outline-light px-3" href="login">Login</a>
+                    <a class="btn btn-primary px-3" href="register">Register</a>
+                }
             </div>
         </div>
     </div>
@@ -43,8 +58,25 @@
     private bool collapseNavMenu = true;
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+        AuthState.OnChange += StateHasChanged;
+    }
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthState.LogoutAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnChange -= StateHasChanged;
     }
 }

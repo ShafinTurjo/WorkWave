@@ -1,0 +1,4 @@
+1.docker exec -it workwave-mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong!Passw0rd" -C 
+2. SELECT Id, FullName, Email, CreatedAt FROM WorkWaveDb.dbo.Users;
+3.GO
+4.EXIT
