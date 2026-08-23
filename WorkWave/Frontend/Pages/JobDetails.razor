@@ -1,10 +1,19 @@
 @page "/job/{JobId:int}"
+@using System.Net.Http.Json
 @inject NavigationManager Navigation
+@inject HttpClient Http
 
 <div class="bg-light-subtle min-vh-100 py-5">
     <div class="container" style="max-width: 800px;">
 
-        @if (job == null)
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-3">Loading job...</p>
+            </div>
+        }
+        else if (job == null)
         {
             <div class="text-center py-5 bg-white rounded-4 shadow-sm">
                 <i class="bi bi-emoji-frown text-muted display-4"></i>
@@ -73,9 +82,21 @@
     [Parameter] public int JobId { get; set; }
     private JobModel? job;
     private bool showApply = false;
+    private bool isLoading = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        job = JobData.GetById(JobId);
+        try
+        {
+            job = await Http.GetFromJsonAsync<JobModel>($"api/jobs/{JobId}");
+        }
+        catch (Exception)
+        {
+            job = null;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }
