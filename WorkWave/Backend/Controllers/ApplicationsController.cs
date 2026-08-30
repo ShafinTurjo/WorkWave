@@ -52,14 +52,38 @@ public class ApplicationsController : ControllerBase
         _db.JobApplications.Add(application);
         await _db.SaveChangesAsync();
 
+        var job = await _db.Jobs.FindAsync(application.JobId);
+
         return Ok(new ApplicationResponse
         {
             Id = application.Id,
             JobId = application.JobId,
+            JobTitle = job?.Title ?? "",
             ApplicantName = application.ApplicantName,
             ApplicantEmail = application.ApplicantEmail,
             AppliedAt = application.AppliedAt
         });
+    }
+
+    // GET api/applications/user/5  (applications submitted by a specific worker)
+    [HttpGet("user/{userId:int}")]
+    public async Task<ActionResult<List<ApplicationResponse>>> GetByUser(int userId)
+    {
+        var applications = await _db.JobApplications
+            .Include(a => a.Job)
+            .Where(a => a.ApplicantUserId == userId)
+            .OrderByDescending(a => a.AppliedAt)
+            .ToListAsync();
+
+        return Ok(applications.Select(a => new ApplicationResponse
+        {
+            Id = a.Id,
+            JobId = a.JobId,
+            JobTitle = a.Job?.Title ?? "",
+            ApplicantName = a.ApplicantName,
+            ApplicantEmail = a.ApplicantEmail,
+            AppliedAt = a.AppliedAt
+        }).ToList());
     }
 
     // GET api/applications/job/5  (applications received for a specific job)
@@ -67,6 +91,7 @@ public class ApplicationsController : ControllerBase
     public async Task<ActionResult<List<ApplicationResponse>>> GetByJob(int jobId)
     {
         var applications = await _db.JobApplications
+            .Include(a => a.Job)
             .Where(a => a.JobId == jobId)
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
@@ -75,6 +100,7 @@ public class ApplicationsController : ControllerBase
         {
             Id = a.Id,
             JobId = a.JobId,
+            JobTitle = a.Job?.Title ?? "",
             ApplicantName = a.ApplicantName,
             ApplicantEmail = a.ApplicantEmail,
             AppliedAt = a.AppliedAt
