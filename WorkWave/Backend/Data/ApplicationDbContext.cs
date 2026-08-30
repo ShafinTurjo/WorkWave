@@ -35,9 +35,22 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<JobApplication>()
-            .HasOne(a => a.ApplicantUser)
-            .WithMany(u => u.Applications)
-            .HasForeignKey(a => a.ApplicantUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+    .HasOne(a => a.ApplicantUser)
+    .WithMany(u => u.Applications)
+    .HasForeignKey(a => a.ApplicantUserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+        // Seed one default Admin account.
+        // Login: admin@workwave.com / Admin@123  (please change the password after first login)
+        modelBuilder.Entity<User>().HasData(new User
+        {
+            Id = 1,
+            FullName = "WorkWave Admin",
+            Email = "admin@workwave.com",
+            PasswordHash = "100000.DC1OA2PJBVgR8D+W3glHhQ==.UpIuy2g6O9F7r5IGi31XJmw4FAEr/EZIoZYVmTgPBZg=",
+            Role = "Admin",
+            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        });
     }
 }
+
