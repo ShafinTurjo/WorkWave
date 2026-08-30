@@ -28,11 +28,15 @@ public class AuthController : ControllerBase
             return Conflict(new { message = "An account with this email already exists." });
         }
 
+        // Self-registration can only create Worker or Employer accounts.
+        var role = request.Role == "Employer" ? "Employer" : "Worker";
+
         var user = new User
         {
             FullName = request.FullName,
             Email = request.Email,
-            PasswordHash = PasswordHasher.Hash(request.Password)
+            PasswordHash = PasswordHasher.Hash(request.Password),
+            Role = role
         };
 
         _db.Users.Add(user);
@@ -42,7 +46,8 @@ public class AuthController : ControllerBase
         {
             UserId = user.Id,
             FullName = user.FullName,
-            Email = user.Email
+            Email = user.Email,
+            Role = user.Role
         });
     }
 
@@ -60,7 +65,8 @@ public class AuthController : ControllerBase
         {
             UserId = user.Id,
             FullName = user.FullName,
-            Email = user.Email
+            Email = user.Email,
+            Role = user.Role
         });
     }
 }

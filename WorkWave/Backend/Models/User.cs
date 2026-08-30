@@ -15,6 +15,9 @@ public class User
     // Store only a hash, never the raw password.
     [Required]
     public string PasswordHash { get; set; } = "";
+    // "Admin", "Employer", or "Worker"
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "Worker";
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
