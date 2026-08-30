@@ -29,6 +29,7 @@ public class JobsController : ControllerBase
     }
 
     // GET api/jobs/5
+    // GET api/jobs/5
     [HttpGet("{id:int}")]
     public async Task<ActionResult<JobResponse>> GetById(int id)
     {
@@ -36,6 +37,35 @@ public class JobsController : ControllerBase
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
 
         return Ok(ToResponse(job));
+    }
+
+    // GET api/jobs/mine/5  (jobs posted by a specific employer)
+    [HttpGet("mine/{userId:int}")]
+    public async Task<ActionResult<List<JobResponse>>> GetMine(int userId)
+    {
+        var jobs = await _db.Jobs
+            .Where(j => j.PostedByUserId == userId)
+            .OrderByDescending(j => j.PostedAt)
+            .ToListAsync();
+
+        return Ok(jobs.Select(ToResponse).ToList());
+    }
+
+    // DELETE api/jobs/5?requestingUserId=3  (only the poster, or an Admin, may delete)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, [FromQuery] int requestingUserId)
+    {
+        var job = await _db.Jobs.FindAsync(id);
+        if (job is null) return NotFound(new { message = $"Job {id} not found." });
+
+        var requester = await _db.Users.FindAsync(requestingUserId);
+        var isOwner = job.PostedByUserId == requestingUserId;
+        var isAdmin = requester is not null && requester.Role == "Admin";
+        if (!isOwner && !isAdmin) return Forbid();
+
+        _db.Jobs.Remove(job);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 
     // POST api/jobs
