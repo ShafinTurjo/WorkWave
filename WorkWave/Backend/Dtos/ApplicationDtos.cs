@@ -24,6 +24,7 @@ public class ApplicationResponse
 {
     public int Id { get; set; }
     public int JobId { get; set; }
+    public string JobTitle { get; set; } = "";
     public string ApplicantName { get; set; } = "";
     public string ApplicantEmail { get; set; } = "";
     public DateTime AppliedAt { get; set; }
