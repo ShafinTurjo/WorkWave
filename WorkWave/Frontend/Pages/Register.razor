@@ -23,9 +23,9 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">I want to:</label>
-                    <InputSelect @bind-Value="registerModel.Role" class="form-select">
-                        <option value="Student">Apply for Jobs (Student/Freelancer)</option>
-                        <option value="Client">Post Jobs (Client/Employer)</option>
+                     <InputSelect @bind-Value="registerModel.Role" class="form-select">
+                        <option value="Worker">Apply for Jobs (Worker)</option>
+                        <option value="Employer">Post Jobs (Employer)</option>
                     </InputSelect>
                 </div>
 
@@ -85,11 +85,12 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("api/auth/register", new
+                       var response = await Http.PostAsJsonAsync("api/auth/register", new
             {
                 fullName = registerModel.FullName,
                 email = registerModel.Email,
-                password = registerModel.Password
+                password = registerModel.Password,
+                role = registerModel.Role
             });
 
             if (response.IsSuccessStatusCode)
@@ -97,8 +98,9 @@
                 var result = await response.Content.ReadFromJsonAsync<RegisterResult>();
                 if (result is not null)
                 {
-                    await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email);
-                    Navigation.NavigateTo("/");
+                    await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email, result.Role);
+                    var destination = result.Role == "Employer" ? "/employer" : "/worker";
+                    Navigation.NavigateTo(destination);
                 }
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
@@ -120,9 +122,9 @@
         }
     }
 
-    public class RegisterModel
+       public class RegisterModel
     {
-        public string Role { get; set; } = "Student";
+        public string Role { get; set; } = "Worker";
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
         public string Password { get; set; } = "";
@@ -134,5 +136,6 @@
         public int UserId { get; set; }
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
     }
 }

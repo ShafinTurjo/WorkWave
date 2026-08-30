@@ -1,0 +1,114 @@
+@page "/worker"
+@using System.Net.Http.Json
+@using Frontend.Services
+@inject HttpClient Http
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    @if (!authorized)
+    {
+        <div class="alert alert-warning">Checking access...</div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold">My Dashboard</h3>
+                <p class="text-muted mb-0">Welcome back, @AuthState.FullName</p>
+            </div>
+            <a href="browse-jobs" class="btn btn-primary">
+                <i class="bi bi-briefcase me-1"></i> Browse Jobs
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">My Applications</div>
+            <div class="card-body">
+                @if (loading)
+                {
+                    <p class="text-muted">Loading...</p>
+                }
+                else if (applications.Count == 0)
+                {
+                    <p class="text-muted mb-0">You haven't applied to any jobs yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Job Title</th>
+                                    <th>Applied On</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var app in applications)
+                                {
+                                    <tr>
+                                        <td>@app.JobTitle</td>
+                                        <td>@app.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool authorized = false;
+    private bool loading = true;
+    private List<ApplicationItem> applications = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (!AuthState.CanAccess("Worker"))
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        authorized = true;
+
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/applications/user/{AuthState.UserId}");
+            if (result is not null) applications = result;
+        }
+        catch (Exception)
+        {
+            // Leave the list empty if the request fails.
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private class ApplicationItem
+    {
+        public int Id { get; set; }
+        public int JobId { get; set; }
+        public string JobTitle { get; set; } = "";
+        public string ApplicantName { get; set; } = "";
+        public string ApplicantEmail { get; set; } = "";
+        public DateTime AppliedAt { get; set; }
+    }
+}

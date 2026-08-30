@@ -12,7 +12,12 @@ public class AuthStateService
     public int? UserId { get; private set; }
     public string? FullName { get; private set; }
     public string? Email { get; private set; }
+    public string? Role { get; private set; }
     public bool IsLoggedIn => UserId is not null;
+    public bool IsAdmin => Role == "Admin";
+
+    // Admin can access every role's area; otherwise the role must match exactly.
+    public bool CanAccess(string requiredRole) => IsAdmin || Role == requiredRole;
 
     public AuthStateService(IJSRuntime js)
     {
@@ -30,18 +35,21 @@ public class AuthStateService
             UserId = id;
             FullName = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_user_name");
             Email = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_user_email");
+            Role = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_user_role");
         }
     }
 
-    public async Task SetUserAsync(int userId, string fullName, string email)
+    public async Task SetUserAsync(int userId, string fullName, string email, string role)
     {
         UserId = userId;
         FullName = fullName;
         Email = email;
+        Role = role;
 
         await _js.InvokeVoidAsync("localStorage.setItem", "workwave_user_id", userId.ToString());
         await _js.InvokeVoidAsync("localStorage.setItem", "workwave_user_name", fullName);
         await _js.InvokeVoidAsync("localStorage.setItem", "workwave_user_email", email);
+        await _js.InvokeVoidAsync("localStorage.setItem", "workwave_user_role", role);
 
         OnChange?.Invoke();
     }
@@ -51,10 +59,12 @@ public class AuthStateService
         UserId = null;
         FullName = null;
         Email = null;
+        Role = null;
 
         await _js.InvokeVoidAsync("localStorage.removeItem", "workwave_user_id");
         await _js.InvokeVoidAsync("localStorage.removeItem", "workwave_user_name");
         await _js.InvokeVoidAsync("localStorage.removeItem", "workwave_user_email");
+        await _js.InvokeVoidAsync("localStorage.removeItem", "workwave_user_role");
 
         OnChange?.Invoke();
     }

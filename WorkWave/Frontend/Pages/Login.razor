@@ -74,11 +74,17 @@
 
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+                               var result = await response.Content.ReadFromJsonAsync<LoginResult>();
                 if (result is not null)
                 {
-                    await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email);
-                    Navigation.NavigateTo("/");
+                    await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email, result.Role);
+                    var destination = result.Role switch
+                    {
+                        "Admin" => "/admin",
+                        "Employer" => "/employer",
+                        _ => "/worker"
+                    };
+                    Navigation.NavigateTo(destination);
                 }
             }
             else
@@ -103,10 +109,11 @@
         public bool RememberMe { get; set; } = false;
     }
 
-    private class LoginResult
+        private class LoginResult
     {
         public int UserId { get; set; }
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
     }
 }

@@ -18,13 +18,23 @@
             <p class="text-secondary fs-6">Fill out the form below to publish your job position.</p>
         </div>
 
-        @if (!AuthState.IsLoggedIn)
+                @if (!AuthState.IsLoggedIn)
         {
             <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center" role="alert">
                 <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
                 <div>
                     <h6 class="fw-bold mb-0">Please login first</h6>
                     <small>You need an account to post a job. <a href="login">Login here</a>.</small>
+                </div>
+            </div>
+        }
+        else if (!AuthState.CanAccess("Employer"))
+        {
+            <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+                <div>
+                    <h6 class="fw-bold mb-0">Employer accounts only</h6>
+                    <small>Only Employer accounts can post jobs. <a href="worker">Go to your dashboard</a>.</small>
                 </div>
             </div>
         }
