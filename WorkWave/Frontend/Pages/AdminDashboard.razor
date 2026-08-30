@@ -1,0 +1,277 @@
+@page "/admin"
+@using System.Net.Http.Json
+@using Frontend.Services
+@inject HttpClient Http
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    @if (!authorized)
+    {
+        <div class="alert alert-warning">Checking access...</div>
+    }
+    else
+    {
+        <h3 class="fw-bold mb-4">Admin Panel</h3>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "users" ? "active" : "")" @onclick='() => activeTab = "users"'>Users</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "jobs" ? "active" : "")" @onclick='() => activeTab = "jobs"'>Jobs</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "applications" ? "active" : "")" @onclick='() => activeTab = "applications"'>Applications</button>
+            </li>
+        </ul>
+
+        @if (activeTab == "users")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">All Users (@users.Count)</div>
+                <div class="card-body">
+                    @if (loadingUsers)
+                    {
+                        <p class="text-muted">Loading...</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var u in users)
+                                    {
+                                        <tr>
+                                            <td>@u.FullName</td>
+                                            <td>@u.Email</td>
+                                            <td><span class="badge bg-secondary">@u.Role</span></td>
+                                            <td>@u.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                @if (u.Role != "Admin")
+                                                {
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteUser(u.Id)">Delete</button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "jobs")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">All Jobs (@jobs.Count)</div>
+                <div class="card-body">
+                    @if (loadingJobs)
+                    {
+                        <p class="text-muted">Loading...</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr><th>Title</th><th>Company</th><th>Posted By</th><th>Posted</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var j in jobs)
+                                    {
+                                        <tr>
+                                            <td>@j.Title</td>
+                                            <td>@j.Company</td>
+                                            <td>@j.PostedByName</td>
+                                            <td>@j.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteJob(j.Id)">Delete</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "applications")
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">All Applications (@applications.Count)</div>
+                <div class="card-body">
+                    @if (loadingApplications)
+                    {
+                        <p class="text-muted">Loading...</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr><th>Job</th><th>Applicant</th><th>Email</th><th>Applied</th></tr></thead>
+                                <tbody>
+                                    @foreach (var a in applications)
+                                    {
+                                        <tr>
+                                            <td>@a.JobTitle</td>
+                                            <td>@a.ApplicantName</td>
+                                            <td>@a.ApplicantEmail</td>
+                                            <td>@a.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool authorized = false;
+    private string activeTab = "users";
+    private string? errorMessage;
+
+    private bool loadingUsers = true;
+    private bool loadingJobs = true;
+    private bool loadingApplications = true;
+
+    private List<UserItem> users = new();
+    private List<JobItem> jobs = new();
+    private List<ApplicationItem> applications = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (!AuthState.IsAdmin)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        authorized = true;
+
+        await LoadUsers();
+        await LoadJobs();
+        await LoadApplications();
+    }
+
+    private async Task LoadUsers()
+    {
+        loadingUsers = true;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<UserItem>>($"api/admin/users?adminUserId={AuthState.UserId}");
+            if (result is not null) users = result;
+        }
+        catch (Exception) { errorMessage = "Could not load users."; }
+        finally { loadingUsers = false; }
+    }
+
+    private async Task LoadJobs()
+    {
+        loadingJobs = true;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<JobItem>>($"api/admin/jobs?adminUserId={AuthState.UserId}");
+            if (result is not null) jobs = result;
+        }
+        catch (Exception) { errorMessage = "Could not load jobs."; }
+        finally { loadingJobs = false; }
+    }
+
+    private async Task LoadApplications()
+    {
+        loadingApplications = true;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/admin/applications?adminUserId={AuthState.UserId}");
+            if (result is not null) applications = result;
+        }
+        catch (Exception) { errorMessage = "Could not load applications."; }
+        finally { loadingApplications = false; }
+    }
+
+    private async Task DeleteUser(int userId)
+    {
+        errorMessage = null;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/admin/users/{userId}?adminUserId={AuthState.UserId}");
+            if (response.IsSuccessStatusCode)
+            {
+                users.RemoveAll(u => u.Id == userId);
+            }
+            else
+            {
+                errorMessage = "Could not delete this user.";
+            }
+        }
+        catch (Exception) { errorMessage = "Could not reach the server."; }
+    }
+
+    private async Task DeleteJob(int jobId)
+    {
+        errorMessage = null;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/admin/jobs/{jobId}?adminUserId={AuthState.UserId}");
+            if (response.IsSuccessStatusCode)
+            {
+                jobs.RemoveAll(j => j.Id == jobId);
+            }
+            else
+            {
+                errorMessage = "Could not delete this job.";
+            }
+        }
+        catch (Exception) { errorMessage = "Could not reach the server."; }
+    }
+
+    private class UserItem
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    private class JobItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Company { get; set; } = "";
+        public string Location { get; set; } = "";
+        public string JobType { get; set; } = "";
+        public DateTime PostedAt { get; set; }
+        public int PostedByUserId { get; set; }
+        public string PostedByName { get; set; } = "";
+    }
+
+    private class ApplicationItem
+    {
+        public int Id { get; set; }
+        public int JobId { get; set; }
+        public string JobTitle { get; set; } = "";
+        public string ApplicantName { get; set; } = "";
+        public string ApplicantEmail { get; set; } = "";
+        public DateTime AppliedAt { get; set; }
+    }
+}
