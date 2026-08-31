@@ -28,4 +28,16 @@ public class ApplicationResponse
     public string ApplicantName { get; set; } = "";
     public string ApplicantEmail { get; set; } = "";
     public DateTime AppliedAt { get; set; }
+    public string Status { get; set; } = "Pending";
+}
+
+public class UpdateApplicationStatusRequest
+{
+    // Until real auth/JWT is added, the requester's user id is sent explicitly
+    // so the API can confirm they own the job (or are an Admin).
+    [Required]
+    public int RequestingUserId { get; set; }
+
+    [Required]
+    public string Status { get; set; } = "";
 }

@@ -1,4 +1,9 @@
-﻿@if (SelectedJob != null)
+﻿@using System.Net.Http.Json
+@using Frontend.Services
+@inject HttpClient Http
+@inject AuthStateService AuthState
+
+@if (SelectedJob != null)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.55); backdrop-filter: blur(2px);">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -12,41 +17,43 @@
                 </div>
 
                 <div class="modal-body py-3">
-                    <form>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
-                                <input type="text" class="form-control custom-input" />
+                    @if (!AuthState.IsLoggedIn)
+                    {
+                        <div class="alert alert-warning">You need to <a href="login">log in</a> as a Worker to apply.</div>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger py-2 small">@errorMessage</div>
+                        }
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
+                                    <input type="text" class="form-control custom-input" @bind="fullName" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
+                                    <input type="email" class="form-control custom-input" @bind="email" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold text-secondary small mb-1">Cover Letter / Note to Recruiter</label>
+                                    <textarea class="form-control custom-input" rows="4" @bind="coverLetter"></textarea>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
-                                <input type="email" class="form-control custom-input" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Phone Number</label>
-                                <input type="tel" class="form-control custom-input" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Expected Salary (Optional)</label>
-                                <input type="text" class="form-control custom-input" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Attach Resume / CV (PDF or Docx)</label>
-                                <input type="file" class="form-control custom-input" accept=".pdf,.doc,.docx" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Cover Letter / Note to Recruiter</label>
-                                <textarea class="form-control custom-input" rows="4"></textarea>
-                            </div>
-                        </div>
-                    </form>
+                        </form>
+                    }
                 </div>
 
                 <div class="modal-footer border-0 pt-2">
                     <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 text-secondary" @onclick="CloseModal">Cancel</button>
-                    <button type="button" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" @onclick="SubmitModal">
-                        <i class="bi bi-send-fill me-2"></i>Submit Application
-                    </button>
+                    @if (AuthState.IsLoggedIn)
+                    {
+                        <button type="button" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" disabled="@isSubmitting" @onclick="SubmitModal">
+                            <i class="bi bi-send-fill me-2"></i>@(isSubmitting ? "Submitting..." : "Submit Application")
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -75,10 +82,73 @@
 </style>
 
 @code {
-[Parameter] public JobModel? SelectedJob { get; set; }
+    [Parameter] public JobModel? SelectedJob { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSubmit { get; set; }
 
+    private string fullName = "";
+    private string email = "";
+    private string coverLetter = "";
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedJob != null)
+        {
+            fullName = AuthState.FullName ?? "";
+            email = AuthState.Email ?? "";
+            coverLetter = "";
+            errorMessage = null;
+        }
+    }
+
     private async Task CloseModal() => await OnClose.InvokeAsync();
-    private async Task SubmitModal() => await OnSubmit.InvokeAsync();
+
+    private async Task SubmitModal()
+    {
+        if (SelectedJob is null || AuthState.UserId is null) return;
+
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email))
+        {
+            errorMessage = "Please fill in your name and email.";
+            return;
+        }
+
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/applications", new
+            {
+                jobId = SelectedJob.Id,
+                applicantUserId = AuthState.UserId,
+                applicantName = fullName,
+                applicantEmail = email,
+                coverLetter = coverLetter
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnSubmit.InvokeAsync();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                errorMessage = "You have already applied to this job.";
+            }
+            else
+            {
+                errorMessage = "Could not submit your application. Please try again.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Could not reach the server. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
 }

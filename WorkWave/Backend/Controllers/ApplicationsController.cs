@@ -61,7 +61,8 @@ public class ApplicationsController : ControllerBase
             JobTitle = job?.Title ?? "",
             ApplicantName = application.ApplicantName,
             ApplicantEmail = application.ApplicantEmail,
-            AppliedAt = application.AppliedAt
+            AppliedAt = application.AppliedAt,
+            Status = application.Status
         });
     }
 
@@ -82,7 +83,8 @@ public class ApplicationsController : ControllerBase
             JobTitle = a.Job?.Title ?? "",
             ApplicantName = a.ApplicantName,
             ApplicantEmail = a.ApplicantEmail,
-            AppliedAt = a.AppliedAt
+            AppliedAt = a.AppliedAt,
+            Status = a.Status
         }).ToList());
     }
 
@@ -103,7 +105,44 @@ public class ApplicationsController : ControllerBase
             JobTitle = a.Job?.Title ?? "",
             ApplicantName = a.ApplicantName,
             ApplicantEmail = a.ApplicantEmail,
-            AppliedAt = a.AppliedAt
+            AppliedAt = a.AppliedAt,
+            Status = a.Status
         }).ToList());
+    }
+
+    private static readonly string[] ValidStatuses = { "Pending", "Accepted", "Rejected" };
+
+    // PUT api/applications/5/status  (accept/reject an applicant; only the job's poster or an Admin may do this)
+    [HttpPut("{id:int}/status")]
+    public async Task<ActionResult<ApplicationResponse>> UpdateStatus(int id, UpdateApplicationStatusRequest request)
+    {
+        if (!ValidStatuses.Contains(request.Status))
+        {
+            return BadRequest(new { message = $"Status must be one of: {string.Join(", ", ValidStatuses)}." });
+        }
+
+        var application = await _db.JobApplications
+            .Include(a => a.Job)
+            .FirstOrDefaultAsync(a => a.Id == id);
+        if (application is null) return NotFound(new { message = $"Application {id} not found." });
+
+        var requester = await _db.Users.FindAsync(request.RequestingUserId);
+        var isJobOwner = application.Job is not null && application.Job.PostedByUserId == request.RequestingUserId;
+        var isAdmin = requester is not null && requester.Role == "Admin";
+        if (!isJobOwner && !isAdmin) return Forbid();
+
+        application.Status = request.Status;
+        await _db.SaveChangesAsync();
+
+        return Ok(new ApplicationResponse
+        {
+            Id = application.Id,
+            JobId = application.JobId,
+            JobTitle = application.Job?.Title ?? "",
+            ApplicantName = application.ApplicantName,
+            ApplicantEmail = application.ApplicantEmail,
+            AppliedAt = application.AppliedAt,
+            Status = application.Status
+        });
     }
 }

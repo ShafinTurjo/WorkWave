@@ -41,6 +41,7 @@
                                 <tr>
                                     <th>Job Title</th>
                                     <th>Applied On</th>
+                                    <th>Status</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -50,6 +51,9 @@
                                     <tr>
                                         <td>@app.JobTitle</td>
                                         <td>@app.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            <span class="badge @StatusBadgeClass(app.Status)">@app.Status</span>
+                                        </td>
                                         <td>
                                             <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
                                         </td>
@@ -102,6 +106,13 @@
         }
     }
 
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Accepted" => "bg-success-subtle text-success border border-success-subtle",
+        "Rejected" => "bg-danger-subtle text-danger border border-danger-subtle",
+        _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+    };
+
     private class ApplicationItem
     {
         public int Id { get; set; }
@@ -110,5 +121,6 @@
         public string ApplicantName { get; set; } = "";
         public string ApplicantEmail { get; set; } = "";
         public DateTime AppliedAt { get; set; }
+        public string Status { get; set; } = "Pending";
     }
 }

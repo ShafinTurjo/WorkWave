@@ -72,9 +72,9 @@
                                 }
                                 else
                                 {
-                                    <table class="table table-sm mb-0">
+                                    <table class="table table-sm mb-0 align-middle">
                                         <thead>
-                                            <tr><th>Name</th><th>Email</th><th>Applied</th></tr>
+                                            <tr><th>Name</th><th>Email</th><th>Applied</th><th>Status</th><th></th></tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var a in applicants)
@@ -83,6 +83,20 @@
                                                     <td>@a.ApplicantName</td>
                                                     <td>@a.ApplicantEmail</td>
                                                     <td>@a.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                                    <td>
+                                                        <span class="badge @StatusBadgeClass(a.Status)">@a.Status</span>
+                                                    </td>
+                                                    <td>
+                                                        @if (a.Status == "Pending")
+                                                        {
+                                                            <button class="btn btn-sm btn-outline-success me-1" @onclick="() => UpdateStatus(a, StatusAccepted)">Accept</button>
+                                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => UpdateStatus(a, StatusRejected)">Reject</button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => UpdateStatus(a, StatusPending)">Reset</button>
+                                                        }
+                                                    </td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -203,6 +217,42 @@
         public DateTime PostedAt { get; set; }
     }
 
+    private const string StatusPending = "Pending";
+    private const string StatusAccepted = "Accepted";
+    private const string StatusRejected = "Rejected";
+
+    private async Task UpdateStatus(ApplicationItem application, string newStatus)
+    {
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/applications/{application.Id}/status", new
+            {
+                requestingUserId = AuthState.UserId,
+                status = newStatus
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                application.Status = newStatus;
+            }
+            else
+            {
+                errorMessage = "Could not update the application status.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Could not reach the server. Please try again.";
+        }
+    }
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Accepted" => "bg-success-subtle text-success border border-success-subtle",
+        "Rejected" => "bg-danger-subtle text-danger border border-danger-subtle",
+        _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+    };
+
     private class ApplicationItem
     {
         public int Id { get; set; }
@@ -211,5 +261,6 @@
         public string ApplicantName { get; set; } = "";
         public string ApplicantEmail { get; set; } = "";
         public DateTime AppliedAt { get; set; }
+        public string Status { get; set; } = "Pending";
     }
 }

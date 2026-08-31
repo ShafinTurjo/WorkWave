@@ -21,4 +21,8 @@ public class JobApplication
     public string CoverLetter { get; set; } = "";
 
     public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
+
+    // "Pending" | "Accepted" | "Rejected"
+    [MaxLength(20)]
+    public string Status { get; set; } = "Pending";
 }
