@@ -16,18 +16,20 @@
 
         <!-- Modern Search & Filter Bar -->
         <div class="card border-0 shadow-sm p-3 mb-5 rounded-4 bg-white">
-            <div class="row g-2 align-items-center">
-                <div class="col-lg-5 col-md-12">
+            <div class="row g-2 align-items-center mb-2">
+                <div class="col-12">
                     <div class="input-group search-input-group">
                         <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="bi bi-search text-primary"></i></span>
                         <input type="text" class="form-control border-0 bg-white py-2 shadow-none" placeholder="Search by job title, company, or skills..." @bind="searchQuery" @bind:event="oninput" />
                     </div>
                 </div>
-                <div class="col-lg-4 col-md-6 border-start-md">
+            </div>
+            <div class="row g-2 align-items-center">
+                <div class="col-lg-3 col-md-6">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="bi bi-grid text-primary"></i></span>
                         <select class="form-select border-0 bg-white py-2 shadow-none cursor-pointer" @bind="selectedCategory" @bind:event="onchange">
-                            <option value="">All Job Categories</option>
+                            <option value="">All Categories</option>
                             <option value="IT & Software">IT & Software</option>
                             <option value="Customer Support">Customer Support</option>
                             <option value="Sales & Marketing">Sales & Marketing</option>
@@ -37,8 +39,32 @@
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm rounded-3" @onclick="FilterJobs">
-                        <i class="bi bi-funnel-fill me-1"></i> Search Jobs
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="bi bi-geo-alt text-primary"></i></span>
+                        <select class="form-select border-0 bg-white py-2 shadow-none cursor-pointer" @bind="selectedLocation" @bind:event="onchange">
+                            <option value="">All Locations</option>
+                            @foreach (var location in AvailableLocations)
+                            {
+                                <option value="@location">@location</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="bi bi-briefcase text-primary"></i></span>
+                        <select class="form-select border-0 bg-white py-2 shadow-none cursor-pointer" @bind="selectedJobType" @bind:event="onchange">
+                            <option value="">All Job Types</option>
+                            <option value="Full-Time">Full-Time</option>
+                            <option value="Part-Time">Part-Time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Internship">Internship</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <button class="btn btn-outline-secondary w-100 fw-bold py-2 shadow-sm rounded-3" @onclick="ClearFilters">
+                        <i class="bi bi-x-circle me-1"></i> Clear Filters
                     </button>
                 </div>
             </div>
@@ -168,18 +194,28 @@
 @code {
     private string searchQuery = "";
     private string selectedCategory = "";
+    private string selectedLocation = "";
+    private string selectedJobType = "";
     private JobModel? selectedJobForApply = null;
     private bool isLoading = true;
     private string? errorMessage;
 
     private List<JobModel> AllJobs = new();
 
+    private IEnumerable<string> AvailableLocations => AllJobs
+        .Select(j => j.Location)
+        .Where(l => !string.IsNullOrWhiteSpace(l))
+        .Distinct()
+        .OrderBy(l => l);
+
     private IEnumerable<JobModel> FilteredJobs => AllJobs
         .Where(j => string.IsNullOrWhiteSpace(searchQuery) ||
                     j.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
                     j.Company.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
                     j.Tags.Any(t => t.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
-        .Where(j => string.IsNullOrWhiteSpace(selectedCategory) || j.Category == selectedCategory);
+        .Where(j => string.IsNullOrWhiteSpace(selectedCategory) || j.Category == selectedCategory)
+        .Where(j => string.IsNullOrWhiteSpace(selectedLocation) || j.Location == selectedLocation)
+        .Where(j => string.IsNullOrWhiteSpace(selectedJobType) || j.JobType == selectedJobType);
 
     protected override async Task OnInitializedAsync()
     {
@@ -198,8 +234,11 @@
         }
     }
 
-    private void FilterJobs()
+    private void ClearFilters()
     {
-        StateHasChanged();
+        searchQuery = "";
+        selectedCategory = "";
+        selectedLocation = "";
+        selectedJobType = "";
     }
 }
