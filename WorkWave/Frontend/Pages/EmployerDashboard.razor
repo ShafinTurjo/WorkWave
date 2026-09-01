@@ -74,7 +74,7 @@
                                 {
                                     <table class="table table-sm mb-0 align-middle">
                                         <thead>
-                                            <tr><th>Name</th><th>Email</th><th>Applied</th><th>Status</th><th></th></tr>
+                                            <tr><th>Name</th><th>Email</th><th>Applied</th><th>Resume</th><th>Status</th><th></th></tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var a in applicants)
@@ -83,6 +83,18 @@
                                                     <td>@a.ApplicantName</td>
                                                     <td>@a.ApplicantEmail</td>
                                                     <td>@a.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(a.ResumeUrl))
+                                                        {
+                                                            <a class="btn btn-sm btn-outline-primary" href="@a.ResumeUrl" target="_blank" rel="noopener">
+                                                                <i class="bi bi-file-earmark-pdf-fill me-1"></i>View CV
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted small">Not provided</span>
+                                                        }
+                                                    </td>
                                                     <td>
                                                         <span class="badge @StatusBadgeClass(a.Status)">@a.Status</span>
                                                     </td>
@@ -262,5 +274,7 @@
         public string ApplicantEmail { get; set; } = "";
         public DateTime AppliedAt { get; set; }
         public string Status { get; set; } = "Pending";
+        public string? ResumeOriginalFileName { get; set; }
+        public string? ResumeUrl { get; set; }
     }
 }

@@ -56,6 +56,10 @@
                                         </td>
                                         <td>
                                             <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
+                                            @if (!string.IsNullOrEmpty(app.ResumeUrl))
+                                            {
+                                                <a class="btn btn-sm btn-outline-secondary ms-1" href="@app.ResumeUrl" target="_blank" rel="noopener">My CV</a>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -122,5 +126,7 @@
         public string ApplicantEmail { get; set; } = "";
         public DateTime AppliedAt { get; set; }
         public string Status { get; set; } = "Pending";
+        public string? ResumeOriginalFileName { get; set; }
+        public string? ResumeUrl { get; set; }
     }
 }

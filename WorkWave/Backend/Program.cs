@@ -32,6 +32,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Ensure the resume-uploads folder exists (wwwroot may not be created by default).
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resumes"));
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -39,6 +42,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serve uploaded resumes (and any other static assets) from wwwroot.
+app.UseStaticFiles();
 
 // Must come before endpoint mapping, after routing.
 app.UseCors(FrontendCorsPolicy);

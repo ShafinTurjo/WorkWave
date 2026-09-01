@@ -20,6 +20,14 @@ public class JobApplication
 
     public string CoverLetter { get; set; } = "";
 
+    // Stored on disk under wwwroot/uploads/resumes as "{Guid}.pdf".
+    [MaxLength(260)]
+    public string? ResumeFileName { get; set; }
+
+    // Original file name chosen by the applicant, kept for display/download purposes.
+    [MaxLength(260)]
+    public string? ResumeOriginalFileName { get; set; }
+
     public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
 
     // "Pending" | "Accepted" | "Rejected"

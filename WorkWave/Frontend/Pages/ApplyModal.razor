@@ -41,6 +41,20 @@
                                     <label class="form-label fw-semibold text-secondary small mb-1">Cover Letter / Note to Recruiter</label>
                                     <textarea class="form-control custom-input" rows="4" @bind="coverLetter"></textarea>
                                 </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold text-secondary small mb-1">CV / Resume (PDF, max 5 MB)</label>
+                                    <InputFile OnChange="OnResumeSelected" accept=".pdf" class="form-control custom-input" />
+                                    @if (resumeFile != null)
+                                    {
+                                        <div class="form-text text-success">
+                                            <i class="bi bi-file-earmark-check-fill me-1"></i>@resumeFile.Name (@FormatSize(resumeFile.Size))
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(resumeError))
+                                    {
+                                        <div class="form-text text-danger">@resumeError</div>
+                                    }
+                                </div>
                             </div>
                         </form>
                     }
@@ -86,9 +100,13 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSubmit { get; set; }
 
+    private const long MaxResumeSizeBytes = 5 * 1024 * 1024; // 5 MB
+
     private string fullName = "";
     private string email = "";
     private string coverLetter = "";
+    private Microsoft.AspNetCore.Components.Forms.IBrowserFile? resumeFile;
+    private string? resumeError;
     private bool isSubmitting = false;
     private string? errorMessage;
 
@@ -99,9 +117,36 @@
             fullName = AuthState.FullName ?? "";
             email = AuthState.Email ?? "";
             coverLetter = "";
+            resumeFile = null;
+            resumeError = null;
             errorMessage = null;
         }
     }
+
+    private void OnResumeSelected(Microsoft.AspNetCore.Components.Forms.InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        resumeError = null;
+        resumeFile = null;
+
+        if (file.ContentType != "application/pdf" && !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            resumeError = "Please choose a PDF file.";
+            return;
+        }
+
+        if (file.Size > MaxResumeSizeBytes)
+        {
+            resumeError = "File is too large. Max size is 5 MB.";
+            return;
+        }
+
+        resumeFile = file;
+    }
+
+    private static string FormatSize(long bytes) => bytes < 1024 * 1024
+        ? $"{bytes / 1024.0:0.#} KB"
+        : $"{bytes / (1024.0 * 1024.0):0.#} MB";
 
     private async Task CloseModal() => await OnClose.InvokeAsync();
 
@@ -120,14 +165,23 @@
 
         try
         {
-            var response = await Http.PostAsJsonAsync("api/applications", new
+            using var content = new MultipartFormDataContent
             {
-                jobId = SelectedJob.Id,
-                applicantUserId = AuthState.UserId,
-                applicantName = fullName,
-                applicantEmail = email,
-                coverLetter = coverLetter
-            });
+                { new StringContent(SelectedJob.Id.ToString()), "JobId" },
+                { new StringContent(AuthState.UserId.Value.ToString()), "ApplicantUserId" },
+                { new StringContent(fullName), "ApplicantName" },
+                { new StringContent(email), "ApplicantEmail" },
+                { new StringContent(coverLetter ?? ""), "CoverLetter" }
+            };
+
+            if (resumeFile != null)
+            {
+                var streamContent = new StreamContent(resumeFile.OpenReadStream(MaxResumeSizeBytes));
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+                content.Add(streamContent, "Resume", resumeFile.Name);
+            }
+
+            var response = await Http.PostAsync("api/applications", content);
 
             if (response.IsSuccessStatusCode)
             {

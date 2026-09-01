@@ -18,6 +18,9 @@ public class ApplyRequest
     public string ApplicantEmail { get; set; } = "";
 
     public string CoverLetter { get; set; } = "";
+
+    // Optional CV/resume, PDF only (validated in the controller).
+    public IFormFile? Resume { get; set; }
 }
 
 public class ApplicationResponse
@@ -29,6 +32,8 @@ public class ApplicationResponse
     public string ApplicantEmail { get; set; } = "";
     public DateTime AppliedAt { get; set; }
     public string Status { get; set; } = "Pending";
+    public string? ResumeOriginalFileName { get; set; }
+    public string? ResumeUrl { get; set; }
 }
 
 public class UpdateApplicationStatusRequest

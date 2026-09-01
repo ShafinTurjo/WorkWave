@@ -11,15 +11,22 @@ namespace Backend.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IWebHostEnvironment _env;
 
-    public ApplicationsController(ApplicationDbContext db)
+    private const long MaxResumeSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private const string ResumeUploadsRelativePath = "uploads/resumes";
+
+    public ApplicationsController(ApplicationDbContext db, IWebHostEnvironment env)
     {
         _db = db;
+        _env = env;
     }
 
-    // POST api/applications
+    // POST api/applications  (multipart/form-data: JobId, ApplicantUserId, ApplicantName, ApplicantEmail, CoverLetter, Resume)
     [HttpPost]
-    public async Task<ActionResult<ApplicationResponse>> Apply(ApplyRequest request)
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(MaxResumeSizeBytes + 1024)]
+    public async Task<ActionResult<ApplicationResponse>> Apply([FromForm] ApplyRequest request)
     {
         var jobExists = await _db.Jobs.AnyAsync(j => j.Id == request.JobId);
         if (!jobExists)
@@ -40,13 +47,55 @@ public class ApplicationsController : ControllerBase
             return Conflict(new { message = "You have already applied to this job." });
         }
 
+        string? storedFileName = null;
+        string? originalFileName = null;
+
+        if (request.Resume is not null)
+        {
+            var file = request.Resume;
+
+            if (file.Length > MaxResumeSizeBytes)
+            {
+                return BadRequest(new { message = "Resume must be 5 MB or smaller." });
+            }
+
+            var extension = Path.GetExtension(file.FileName);
+            var isPdf = file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase)
+                        && extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+            if (!isPdf)
+            {
+                return BadRequest(new { message = "Resume must be a PDF file." });
+            }
+
+            var webRoot = _env.WebRootPath;
+            if (string.IsNullOrEmpty(webRoot))
+            {
+                // WebRootPath is only populated automatically if a wwwroot folder exists at startup.
+                webRoot = Path.Combine(_env.ContentRootPath, "wwwroot");
+            }
+
+            var uploadsDir = Path.Combine(webRoot, "uploads", "resumes");
+            Directory.CreateDirectory(uploadsDir);
+
+            storedFileName = $"{Guid.NewGuid()}.pdf";
+            originalFileName = file.FileName;
+
+            var fullPath = Path.Combine(uploadsDir, storedFileName);
+            await using (var stream = System.IO.File.Create(fullPath))
+            {
+                await file.CopyToAsync(stream);
+            }
+        }
+
         var application = new JobApplication
         {
             JobId = request.JobId,
             ApplicantUserId = request.ApplicantUserId,
             ApplicantName = request.ApplicantName,
             ApplicantEmail = request.ApplicantEmail,
-            CoverLetter = request.CoverLetter
+            CoverLetter = request.CoverLetter,
+            ResumeFileName = storedFileName,
+            ResumeOriginalFileName = originalFileName
         };
 
         _db.JobApplications.Add(application);
@@ -54,16 +103,7 @@ public class ApplicationsController : ControllerBase
 
         var job = await _db.Jobs.FindAsync(application.JobId);
 
-        return Ok(new ApplicationResponse
-        {
-            Id = application.Id,
-            JobId = application.JobId,
-            JobTitle = job?.Title ?? "",
-            ApplicantName = application.ApplicantName,
-            ApplicantEmail = application.ApplicantEmail,
-            AppliedAt = application.AppliedAt,
-            Status = application.Status
-        });
+        return Ok(ToResponse(application, job?.Title ?? ""));
     }
 
     // GET api/applications/user/5  (applications submitted by a specific worker)
@@ -76,16 +116,7 @@ public class ApplicationsController : ControllerBase
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
 
-        return Ok(applications.Select(a => new ApplicationResponse
-        {
-            Id = a.Id,
-            JobId = a.JobId,
-            JobTitle = a.Job?.Title ?? "",
-            ApplicantName = a.ApplicantName,
-            ApplicantEmail = a.ApplicantEmail,
-            AppliedAt = a.AppliedAt,
-            Status = a.Status
-        }).ToList());
+        return Ok(applications.Select(a => ToResponse(a, a.Job?.Title ?? "")).ToList());
     }
 
     // GET api/applications/job/5  (applications received for a specific job)
@@ -98,16 +129,7 @@ public class ApplicationsController : ControllerBase
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
 
-        return Ok(applications.Select(a => new ApplicationResponse
-        {
-            Id = a.Id,
-            JobId = a.JobId,
-            JobTitle = a.Job?.Title ?? "",
-            ApplicantName = a.ApplicantName,
-            ApplicantEmail = a.ApplicantEmail,
-            AppliedAt = a.AppliedAt,
-            Status = a.Status
-        }).ToList());
+        return Ok(applications.Select(a => ToResponse(a, a.Job?.Title ?? "")).ToList());
     }
 
     private static readonly string[] ValidStatuses = { "Pending", "Accepted", "Rejected" };
@@ -134,15 +156,28 @@ public class ApplicationsController : ControllerBase
         application.Status = request.Status;
         await _db.SaveChangesAsync();
 
-        return Ok(new ApplicationResponse
+        return Ok(ToResponse(application, application.Job?.Title ?? ""));
+    }
+
+    private ApplicationResponse ToResponse(JobApplication a, string jobTitle)
+    {
+        string? resumeUrl = null;
+        if (!string.IsNullOrEmpty(a.ResumeFileName))
         {
-            Id = application.Id,
-            JobId = application.JobId,
-            JobTitle = application.Job?.Title ?? "",
-            ApplicantName = application.ApplicantName,
-            ApplicantEmail = application.ApplicantEmail,
-            AppliedAt = application.AppliedAt,
-            Status = application.Status
-        });
+            resumeUrl = $"{Request.Scheme}://{Request.Host}/{ResumeUploadsRelativePath}/{a.ResumeFileName}";
+        }
+
+        return new ApplicationResponse
+        {
+            Id = a.Id,
+            JobId = a.JobId,
+            JobTitle = jobTitle,
+            ApplicantName = a.ApplicantName,
+            ApplicantEmail = a.ApplicantEmail,
+            AppliedAt = a.AppliedAt,
+            Status = a.Status,
+            ResumeOriginalFileName = a.ResumeOriginalFileName,
+            ResumeUrl = resumeUrl
+        };
     }
 }
