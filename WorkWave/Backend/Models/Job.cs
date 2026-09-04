@@ -35,5 +35,7 @@ public class Job
     public int PostedByUserId { get; set; }
     public User? PostedByUser { get; set; }
 
+    public string SkillsRequired { get; set; } = "";
+
     public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
 }

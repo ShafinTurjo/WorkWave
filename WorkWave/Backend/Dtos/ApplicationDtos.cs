@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Backend.Dtos;
 
@@ -34,6 +35,9 @@ public class ApplicationResponse
     public string Status { get; set; } = "Pending";
     public string? ResumeOriginalFileName { get; set; }
     public string? ResumeUrl { get; set; }
+
+    // Calculated skill matching percentage between Job requirements and Applicant's CV
+    public int MatchScore { get; set; }
 }
 
 public class UpdateApplicationStatusRequest

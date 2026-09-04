@@ -1,5 +1,6 @@
 using Backend.Data;
 using Backend.Dtos;
+using Backend.Helpers;
 using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -102,21 +103,32 @@ public class ApplicationsController : ControllerBase
         await _db.SaveChangesAsync();
 
         var job = await _db.Jobs.FindAsync(application.JobId);
+        var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == request.ApplicantUserId);
 
-        return Ok(ToResponse(application, job?.Title ?? ""));
+        int score = SkillMatcher.CalculateScore(job?.SkillsRequired, userResume?.Skills);
+
+        return Ok(ToResponse(application, job?.Title ?? "", score));
     }
 
     // GET api/applications/user/5  (applications submitted by a specific worker)
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByUser(int userId)
     {
+        var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == userId);
+
         var applications = await _db.JobApplications
             .Include(a => a.Job)
             .Where(a => a.ApplicantUserId == userId)
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
 
-        return Ok(applications.Select(a => ToResponse(a, a.Job?.Title ?? "")).ToList());
+        var responseList = applications.Select(a =>
+        {
+            int score = SkillMatcher.CalculateScore(a.Job?.SkillsRequired, userResume?.Skills);
+            return ToResponse(a, a.Job?.Title ?? "", score);
+        }).ToList();
+
+        return Ok(responseList);
     }
 
     // GET api/applications/job/5  (applications received for a specific job)
@@ -129,7 +141,20 @@ public class ApplicationsController : ControllerBase
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
 
-        return Ok(applications.Select(a => ToResponse(a, a.Job?.Title ?? "")).ToList());
+        // সকল আবেদনকারীর UserId বের করে তাদের সিভির স্কিল ডাটা ফেচ করা
+        var applicantUserIds = applications.Select(a => a.ApplicantUserId).Distinct().ToList();
+        var resumes = await _db.Resumes
+            .Where(r => applicantUserIds.Contains(r.UserId))
+            .ToDictionaryAsync(r => r.UserId, r => r.Skills);
+
+        var responseList = applications.Select(a =>
+        {
+            resumes.TryGetValue(a.ApplicantUserId, out var userSkills);
+            int score = SkillMatcher.CalculateScore(a.Job?.SkillsRequired, userSkills);
+            return ToResponse(a, a.Job?.Title ?? "", score);
+        }).ToList();
+
+        return Ok(responseList);
     }
 
     private static readonly string[] ValidStatuses = { "Pending", "Accepted", "Rejected" };
@@ -156,10 +181,13 @@ public class ApplicationsController : ControllerBase
         application.Status = request.Status;
         await _db.SaveChangesAsync();
 
-        return Ok(ToResponse(application, application.Job?.Title ?? ""));
+        var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == application.ApplicantUserId);
+        int score = SkillMatcher.CalculateScore(application.Job?.SkillsRequired, userResume?.Skills);
+
+        return Ok(ToResponse(application, application.Job?.Title ?? "", score));
     }
 
-    private ApplicationResponse ToResponse(JobApplication a, string jobTitle)
+    private ApplicationResponse ToResponse(JobApplication a, string jobTitle, int matchScore = 0)
     {
         string? resumeUrl = null;
         if (!string.IsNullOrEmpty(a.ResumeFileName))
@@ -177,7 +205,8 @@ public class ApplicationsController : ControllerBase
             AppliedAt = a.AppliedAt,
             Status = a.Status,
             ResumeOriginalFileName = a.ResumeOriginalFileName,
-            ResumeUrl = resumeUrl
+            ResumeUrl = resumeUrl,
+            MatchScore = matchScore
         };
     }
 }
