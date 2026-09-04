@@ -13,6 +13,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
+    public DbSet<Resume> Resumes => Set<Resume>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,10 +36,17 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<JobApplication>()
-    .HasOne(a => a.ApplicantUser)
-    .WithMany(u => u.Applications)
-    .HasForeignKey(a => a.ApplicantUserId)
-    .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(a => a.ApplicantUser)
+            .WithMany(u => u.Applications)
+            .HasForeignKey(a => a.ApplicantUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Resume Relationship with User
+        modelBuilder.Entity<Resume>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Seed one default Admin account.
         // Login: admin@workwave.com / Admin@123  (please change the password after first login)
@@ -53,4 +61,3 @@ public class ApplicationDbContext : DbContext
         });
     }
 }
-
