@@ -4,69 +4,140 @@
 @inject HttpClient Http
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     @if (!authorized)
     {
-        <div class="alert alert-warning">Checking access...</div>
+        <div class="alert alert-warning border-0 shadow-sm">Checking access...</div>
     }
     else
     {
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Header Welcome Banner -->
+        <div class="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm rounded mb-4 border-start border-4 border-primary">
             <div>
-                <h3 class="fw-bold">My Dashboard</h3>
-                <p class="text-muted mb-0">Welcome back, @AuthState.FullName</p>
+                <h4 class="mb-1 text-primary fw-bold">Welcome back, @(string.IsNullOrWhiteSpace(AuthState.FullName) ? "Worker" : AuthState.FullName)! 👋</h4>
+                <p class="text-muted mb-0 small">Track your job applications, manage your CV, and update your profile.</p>
             </div>
-            <a href="browse-jobs" class="btn btn-primary">
-                <i class="bi bi-briefcase me-1"></i> Browse Jobs
-            </a>
+            <div>
+                <a href="browse-jobs" class="btn btn-primary btn-sm">
+                    <i class="bi bi-briefcase me-1"></i> Browse Jobs
+                </a>
+            </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-bold">My Applications</div>
-            <div class="card-body">
-                @if (loading)
-                {
-                    <p class="text-muted">Loading...</p>
-                }
-                else if (applications.Count == 0)
-                {
-                    <p class="text-muted mb-0">You haven't applied to any jobs yet.</p>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Job Title</th>
-                                    <th>Applied On</th>
-                                    <th>Status</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var app in applications)
-                                {
-                                    <tr>
-                                        <td>@app.JobTitle</td>
-                                        <td>@app.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                        <td>
-                                            <span class="badge @StatusBadgeClass(app.Status)">@app.Status</span>
-                                        </td>
-                                        <td>
-                                            <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
-                                            @if (!string.IsNullOrEmpty(app.ResumeUrl))
-                                            {
-                                                <a class="btn btn-sm btn-outline-secondary ms-1" href="@app.ResumeUrl" target="_blank" rel="noopener">My CV</a>
-                                            }
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+        <!-- Stat Cards Row (Updated) -->
+        <div class="row g-3 mb-4">
+            <!-- Jobs Applied Card -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 text-center bg-white h-100">
+                    <div class="text-primary fs-3 mb-1">📋</div>
+                    <h5 class="fw-bold mb-0">@applications.Count</h5>
+                    <small class="text-muted">Jobs Applied</small>
+                </div>
+            </div>
+
+            <!-- CV Status Card -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 text-center bg-white h-100">
+                    <div class="text-success fs-3 mb-1">📄</div>
+                    <h5 class="fw-bold mb-0">@(hasResume ? "Active" : "Not Built")</h5>
+                    <small class="text-muted">CV Status</small>
+                </div>
+            </div>
+
+            <!-- Quick CV Action Card (Replaced Account Type) -->
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm p-3 text-center bg-white h-100 d-flex flex-column justify-content-center align-items-center">
+                    <h6 class="fw-bold mb-2">My CV</h6>
+                    @if (hasResume)
+                    {
+                        <a href="cv-generator" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-pencil-square me-1"></i> Build / Edit CV
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="cv-generator" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-plus-circle me-1"></i> Build / Edit CV
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="row g-4">
+            <!-- Left Side: Applied Jobs Table -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-card-checklist me-1 text-primary"></i> My Applications</span>
+                        <span class="badge bg-light text-dark fw-normal">Total: @applications.Count</span>
                     </div>
-                }
+                    <div class="card-body">
+                        @if (loading)
+                        {
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                                <span class="ms-2 text-muted">Loading applications...</span>
+                            </div>
+                        }
+                        else if (applications.Count == 0)
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <p class="mb-2">You haven't applied to any jobs yet.</p>
+                                <a href="browse-jobs" class="btn btn-sm btn-outline-primary">Find a Job Now</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table align-middle table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Job Title</th>
+                                            <th>Applied On</th>
+                                            <th>Status</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var app in applications)
+                                        {
+                                            <tr>
+                                                <td class="fw-bold text-dark">@app.JobTitle</td>
+                                                <td class="text-muted small">@app.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                                <td>
+                                                    <span class="badge @StatusBadgeClass(app.Status)">@app.Status</span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
+                                                    @if (!string.IsNullOrEmpty(app.ResumeUrl))
+                                                    {
+                                                        <a class="btn btn-sm btn-outline-secondary ms-1" href="@app.ResumeUrl" target="_blank" rel="noopener">My CV</a>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Account Profile Info Box -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm p-4 bg-white">
+                    <h5 class="fw-bold mb-3">Profile Info</h5>
+                    <div class="small">
+                        <p class="mb-2"><strong>Name:</strong> @(AuthState.FullName ?? "N/A")</p>
+                        <p class="mb-2"><strong>Email:</strong> @(AuthState.Email ?? "N/A")</p>
+                        <p class="mb-0"><strong>Role:</strong> <span class="badge bg-secondary-subtle text-secondary">Worker</span></p>
+                    </div>
+                </div>
             </div>
         </div>
     }
@@ -75,6 +146,7 @@
 @code {
     private bool authorized = false;
     private bool loading = true;
+    private bool hasResume = false;
     private List<ApplicationItem> applications = new();
 
     protected override async Task OnInitializedAsync()
@@ -97,12 +169,20 @@
 
         try
         {
+            // ১. ইউজার ডাটাবেজে আগে থেকে এপ্লাই করা অ্যাপ্লিকেশনগুলো লোড করা
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/applications/user/{AuthState.UserId}");
             if (result is not null) applications = result;
+
+            // ২. সিভির স্ট্যাটাস চেক করা (Active/Not Built)
+            var resumeResponse = await Http.GetAsync($"api/resume/{AuthState.UserId}");
+            if (resumeResponse.IsSuccessStatusCode)
+            {
+                hasResume = true;
+            }
         }
         catch (Exception)
         {
-            // Leave the list empty if the request fails.
+            // Request ব্যর্থ হলে লিস্ট ফাঁকা থাকবে
         }
         finally
         {
