@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <!-- Stat Cards Row (Updated) -->
+        <!-- Stat Cards Row -->
         <div class="row g-3 mb-4">
             <!-- Jobs Applied Card -->
             <div class="col-md-4">
@@ -46,7 +46,7 @@
                 </div>
             </div>
 
-            <!-- Quick CV Action Card (Replaced Account Type) -->
+            <!-- Quick CV Action Card -->
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3 text-center bg-white h-100 d-flex flex-column justify-content-center align-items-center">
                     <h6 class="fw-bold mb-2">My CV</h6>
@@ -98,6 +98,7 @@
                                         <tr>
                                             <th>Job Title</th>
                                             <th>Applied On</th>
+                                            <th>Match Score</th> <!-- নতুন Match Score কলাম -->
                                             <th>Status</th>
                                             <th class="text-end">Action</th>
                                         </tr>
@@ -108,6 +109,19 @@
                                             <tr>
                                                 <td class="fw-bold text-dark">@app.JobTitle</td>
                                                 <td class="text-muted small">@app.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+
+                                                <!-- Match Score Column Rendering -->
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2" style="max-width: 140px;">
+                                                        <div class="progress flex-grow-1" style="height: 6px;">
+                                                            <div class="progress-bar @GetScoreColor(app.MatchScore)"
+                                                                 role="progressbar"
+                                                                 style="width: @app.MatchScore%;"></div>
+                                                        </div>
+                                                        <span class="badge @GetScoreBadgeClass(app.MatchScore)">@app.MatchScore%</span>
+                                                    </div>
+                                                </td>
+
                                                 <td>
                                                     <span class="badge @StatusBadgeClass(app.Status)">@app.Status</span>
                                                 </td>
@@ -197,6 +211,22 @@
         _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
     };
 
+    // Match Score Progress Bar Color
+    private static string GetScoreColor(int score) => score switch
+    {
+        >= 75 => "bg-success",
+        >= 40 => "bg-warning",
+        _ => "bg-danger"
+    };
+
+    // Match Score Badge Color & Style
+    private static string GetScoreBadgeClass(int score) => score switch
+    {
+        >= 75 => "bg-success-subtle text-success border border-success-subtle",
+        >= 40 => "bg-warning-subtle text-warning-emphasis border border-warning-subtle",
+        _ => "bg-danger-subtle text-danger border border-danger-subtle"
+    };
+
     private class ApplicationItem
     {
         public int Id { get; set; }
@@ -208,5 +238,8 @@
         public string Status { get; set; } = "Pending";
         public string? ResumeOriginalFileName { get; set; }
         public string? ResumeUrl { get; set; }
+
+        // MatchScore প্রপার্টি যোগ করা হয়েছে
+        public int MatchScore { get; set; } = 0;
     }
 }
