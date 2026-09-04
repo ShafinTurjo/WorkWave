@@ -14,7 +14,7 @@ public class ApplicationsController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
 
-    private const long MaxResumeSizeBytes = 5 * 1024 * 1024; // 5 MB
+    private const long MaxResumeSizeBytes = 5 * 1024 * 1024; 
     private const string ResumeUploadsRelativePath = "uploads/resumes";
 
     public ApplicationsController(ApplicationDbContext db, IWebHostEnvironment env)
@@ -23,7 +23,7 @@ public class ApplicationsController : ControllerBase
         _env = env;
     }
 
-    // POST api/applications
+    
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxResumeSizeBytes + 1024)]
@@ -104,7 +104,7 @@ public class ApplicationsController : ControllerBase
         var job = await _db.Jobs.FindAsync(application.JobId);
         var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == request.ApplicantUserId);
 
-        // Fallback Logic for Job Skills & User Skills
+        
         string jobSkills = GetEffectiveJobSkills(job?.SkillsRequired, job?.TagsCsv);
         string userSkills = GetEffectiveUserSkills(userResume?.Skills, request.CoverLetter);
 
@@ -113,7 +113,6 @@ public class ApplicationsController : ControllerBase
         return Ok(ToResponse(application, job?.Title ?? "", score));
     }
 
-    // GET api/applications/user/5
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByUser(int userId)
     {
@@ -137,7 +136,6 @@ public class ApplicationsController : ControllerBase
         return Ok(responseList);
     }
 
-    // GET api/applications/job/5
     [HttpGet("job/{jobId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByJob(int jobId)
     {
@@ -167,7 +165,7 @@ public class ApplicationsController : ControllerBase
 
     private static readonly string[] ValidStatuses = { "Pending", "Accepted", "Rejected" };
 
-    // PUT api/applications/5/status
+    
     [HttpPut("{id:int}/status")]
     public async Task<ActionResult<ApplicationResponse>> UpdateStatus(int id, UpdateApplicationStatusRequest request)
     {
@@ -199,15 +197,15 @@ public class ApplicationsController : ControllerBase
         return Ok(ToResponse(application, application.Job?.Title ?? "", score));
     }
 
-    // Helper method to ensure job skills are never empty if TagsCsv exists
+    
     private static string GetEffectiveJobSkills(string? skillsRequired, string? tagsCsv)
     {
         if (!string.IsNullOrWhiteSpace(skillsRequired)) return skillsRequired;
         if (!string.IsNullOrWhiteSpace(tagsCsv)) return tagsCsv;
-        return "Blazor, ASP.NET Core, C#"; // Default Fallback for testing
+        return "Blazor, ASP.NET Core, C#"; 
     }
 
-    // Helper method to ensure user skills fall back gracefully
+    
     private static string GetEffectiveUserSkills(string? resumeSkills, string? coverLetter)
     {
         if (!string.IsNullOrWhiteSpace(resumeSkills)) return resumeSkills;

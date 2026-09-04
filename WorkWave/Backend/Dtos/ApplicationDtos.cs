@@ -8,7 +8,7 @@ public class ApplyRequest
     [Required]
     public int JobId { get; set; }
 
-    // Until real auth/JWT is added, the applicant's user id is sent explicitly.
+    
     [Required]
     public int ApplicantUserId { get; set; }
 
@@ -20,7 +20,7 @@ public class ApplyRequest
 
     public string CoverLetter { get; set; } = "";
 
-    // Optional CV/resume, PDF only (validated in the controller).
+    
     public IFormFile? Resume { get; set; }
 }
 
@@ -36,14 +36,13 @@ public class ApplicationResponse
     public string? ResumeOriginalFileName { get; set; }
     public string? ResumeUrl { get; set; }
 
-    // Calculated skill matching percentage between Job requirements and Applicant's CV
+    
     public int MatchScore { get; set; }
 }
 
 public class UpdateApplicationStatusRequest
 {
-    // Until real auth/JWT is added, the requester's user id is sent explicitly
-    // so the API can confirm they own the job (or are an Admin).
+    
     [Required]
     public int RequestingUserId { get; set; }
 

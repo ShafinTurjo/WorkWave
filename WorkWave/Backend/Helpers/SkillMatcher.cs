@@ -7,7 +7,7 @@
             if (string.IsNullOrWhiteSpace(jobSkillsStr) || string.IsNullOrWhiteSpace(userSkillsStr))
                 return 0;
 
-            // স্প্লিট করে ট্রিম এবং ছোট হাতের অক্ষরে রূপান্তর
+            
             var requiredSkills = jobSkillsStr.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim().ToLower())
                                              .Where(s => !string.IsNullOrEmpty(s))
@@ -26,7 +26,7 @@
 
             foreach (var reqSkill in requiredSkills)
             {
-                // Exact match অথবা partial string match চেক করা
+                
                 if (userSkills.Any(uSkill => uSkill.Contains(reqSkill) || reqSkill.Contains(uSkill)))
                 {
                     matchedCount++;

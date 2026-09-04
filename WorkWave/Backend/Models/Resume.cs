@@ -4,7 +4,7 @@ public class Resume
 {
     public int Id { get; set; }
 
-    // Foreign key for Worker
+    
     public int UserId { get; set; }
     public User? User { get; set; }
 

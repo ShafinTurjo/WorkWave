@@ -17,35 +17,34 @@
     else
     {
         <div class="row">
-            <!-- Form Left Side -->
             <div class="col-md-5 border-end pe-4 mb-4">
-                <h5>Enter Details</h5>
+                <h5 class="fw-bold mb-3">Enter Details</h5>
                 <div class="mb-3">
-                    <label class="form-label">Full Name</label>
+                    <label class="form-label font-weight-bold">Full Name</label>
                     <input class="form-control" @bind="resume.FullName" @bind:event="oninput" placeholder="e.g. TASMIA TABASSUM" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Phone Number</label>
+                    <label class="form-label font-weight-bold">Phone Number</label>
                     <input class="form-control" @bind="resume.Phone" @bind:event="oninput" placeholder="e.g. 01406090772" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Professional Summary</label>
+                    <label class="form-label font-weight-bold">Professional Summary</label>
                     <textarea class="form-control" rows="3" @bind="resume.Summary" @bind:event="oninput" placeholder="Brief summary about your goals..."></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Skills (comma separated)</label>
+                    <label class="form-label font-weight-bold">Skills (comma separated)</label>
                     <input class="form-control" @bind="resume.Skills" @bind:event="oninput" placeholder="e.g. HTML, CSS, JavaScript, SQL, .NET" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Experience</label>
+                    <label class="form-label font-weight-bold">Experience</label>
                     <textarea class="form-control" rows="4" @bind="resume.Experience" @bind:event="oninput" placeholder="Work experience details..."></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Education</label>
+                    <label class="form-label font-weight-bold">Education</label>
                     <textarea class="form-control" rows="3" @bind="resume.Education" @bind:event="oninput" placeholder="Degree, Institution name, Graduation year..."></textarea>
                 </div>
 
-                <div class="mt-4 mb-3">
+                <div class="mt-4 mb-3 d-flex gap-2">
                     <button class="btn btn-primary" @onclick="SaveResume" disabled="@isSaving">
                         @if (isSaving)
                         {
@@ -57,27 +56,26 @@
                             <span>Save to Profile</span>
                         }
                     </button>
-                    <button class="btn btn-outline-secondary ms-2" @onclick="TriggerPrint">Download PDF / Print</button>
+                    <button class="btn btn-outline-secondary" @onclick="PrintCv">
+                        <i class="bi bi-printer me-1"></i> Download PDF / Print
+                    </button>
                 </div>
             </div>
 
-            <!-- Modern Shaded Resume Preview Right Side -->
-            <div class="col-md-7 ps-4">
-                <h5>Live CV Preview</h5>
-                <div id="cv-print-area" class="card border-0 shadow-sm overflow-hidden" style="min-height: 700px; font-family: 'Georgia', serif; background-color: #ffffff;">
-                    
-                    <!-- Dark Header Banner -->
-                    <div style="background-color: #4a4a4a; color: #ffffff; padding: 30px 25px; text-transform: uppercase;">
-                        <h2 class="m-0 font-weight-bold" style="letter-spacing: 2px; font-size: 26px;">
+            <div class="col-md-7 ps-4 d-flex flex-column align-items-center">
+                <h5 class="fw-bold align-self-start mb-3">Live CV Preview</h5>
+
+                <div id="cv-preview-container" class="card border-0 shadow overflow-hidden" style="width: 100%; max-width: 800px; font-family: 'Georgia', serif; background-color: #ffffff;">
+                    <div style="background-color: #374151; color: #ffffff; padding: 25px 30px; text-transform: uppercase;">
+                        <h1 class="m-0 font-weight-bold" style="letter-spacing: 2px; font-size: 24px;">
                             @(string.IsNullOrWhiteSpace(resume.FullName) ? "YOUR NAME" : resume.FullName)
-                        </h2>
+                        </h1>
                     </div>
 
-                    <div class="d-flex" style="min-height: 600px;">
-                        <!-- Left Slate Blue Sidebar -->
-                        <div style="background-color: #5b707a; color: #ffffff; width: 38%; padding: 25px 18px; font-size: 13px;">
+                    <div class="d-flex" style="min-height: 680px;">
+                        <div style="background-color: #52636d; color: #ffffff; width: 35%; padding: 25px 20px; font-size: 13px;">
                             <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold border-bottom pb-1 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Contact</h6>
+                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Contact</h6>
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <i class="bi bi-geo-alt-fill"></i>
                                     <span>Dhaka, Bangladesh</span>
@@ -89,65 +87,43 @@
                             </div>
 
                             <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold border-bottom pb-1 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Skills</h6>
-                                <p style="white-space: pre-line; line-height: 1.6;">
+                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Skills</h6>
+                                <p style="white-space: pre-line; line-height: 1.5; word-break: break-word;">
                                     @(string.IsNullOrWhiteSpace(resume.Skills) ? "Your listed skills" : resume.Skills)
                                 </p>
                             </div>
                         </div>
 
-                        <!-- Right White Main Content -->
-                        <div style="width: 62%; padding: 25px 25px; color: #222222; font-size: 13px;">
+                        <div style="width: 65%; padding: 25px 25px; color: #1f2937; font-size: 13px;">
                             @if (!string.IsNullOrWhiteSpace(resume.Summary))
                             {
-                                <div class="mb-4">
-                                    <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 13px; border-bottom: 1.5px solid #666;">SUMMARY</h6>
-                                    <p style="line-height: 1.5; color: #444;">@resume.Summary</p>
+                                <div class="mb-3">
+                                    <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">SUMMARY</h6>
+                                    <p style="line-height: 1.5; color: #374151;">@resume.Summary</p>
                                 </div>
                             }
 
-                            <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 13px; border-bottom: 1.5px solid #666;">EXPERIENCE</h6>
-                                <p style="white-space: pre-line; line-height: 1.5; color: #333;">
+                            <div class="mb-3">
+                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">EXPERIENCE</h6>
+                                <p style="white-space: pre-line; line-height: 1.5; color: #374151;">
                                     @(string.IsNullOrWhiteSpace(resume.Experience) ? "Your experience details will appear here." : resume.Experience)
                                 </p>
                             </div>
 
-                            <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 13px; border-bottom: 1.5px solid #666;">EDUCATION</h6>
-                                <p style="white-space: pre-line; line-height: 1.5; color: #333;">
+                            <div class="mb-3">
+                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">EDUCATION</h6>
+                                <p style="white-space: pre-line; line-height: 1.5; color: #374151;">
                                     @(string.IsNullOrWhiteSpace(resume.Education) ? "Your education details will appear here." : resume.Education)
                                 </p>
                             </div>
                         </div>
                     </div>
-
                 </div>
+
             </div>
         </div>
     }
 </div>
-
-<style>
-    @@media print {
-        body * {
-            visibility: hidden !important;
-        }
-        #cv-print-area, #cv-print-area * {
-            visibility: visible !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        #cv-print-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-        }
-    }
-</style>
 
 @code {
     private ResumeDto resume = new();
@@ -222,11 +198,11 @@
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", "Please log in first as a Worker to save your resume.");
+            await JS.InvokeVoidAsync("alert", "Please log in first to save your resume.");
         }
     }
 
-    private async Task TriggerPrint()
+    private async Task PrintCv()
     {
         await JS.InvokeVoidAsync("window.print");
     }
