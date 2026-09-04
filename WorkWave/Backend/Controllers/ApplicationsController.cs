@@ -23,7 +23,7 @@ public class ApplicationsController : ControllerBase
         _env = env;
     }
 
-    // POST api/applications  (multipart/form-data: JobId, ApplicantUserId, ApplicantName, ApplicantEmail, CoverLetter, Resume)
+    // POST api/applications
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxResumeSizeBytes + 1024)]
@@ -71,7 +71,6 @@ public class ApplicationsController : ControllerBase
             var webRoot = _env.WebRootPath;
             if (string.IsNullOrEmpty(webRoot))
             {
-                // WebRootPath is only populated automatically if a wwwroot folder exists at startup.
                 webRoot = Path.Combine(_env.ContentRootPath, "wwwroot");
             }
 
@@ -105,12 +104,16 @@ public class ApplicationsController : ControllerBase
         var job = await _db.Jobs.FindAsync(application.JobId);
         var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == request.ApplicantUserId);
 
-        int score = SkillMatcher.CalculateScore(job?.SkillsRequired, userResume?.Skills);
+        // Fallback Logic for Job Skills & User Skills
+        string jobSkills = GetEffectiveJobSkills(job?.SkillsRequired, job?.TagsCsv);
+        string userSkills = GetEffectiveUserSkills(userResume?.Skills, request.CoverLetter);
+
+        int score = SkillMatcher.CalculateScore(jobSkills, userSkills);
 
         return Ok(ToResponse(application, job?.Title ?? "", score));
     }
 
-    // GET api/applications/user/5  (applications submitted by a specific worker)
+    // GET api/applications/user/5
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByUser(int userId)
     {
@@ -124,14 +127,17 @@ public class ApplicationsController : ControllerBase
 
         var responseList = applications.Select(a =>
         {
-            int score = SkillMatcher.CalculateScore(a.Job?.SkillsRequired, userResume?.Skills);
+            string jobSkills = GetEffectiveJobSkills(a.Job?.SkillsRequired, a.Job?.TagsCsv);
+            string userSkills = GetEffectiveUserSkills(userResume?.Skills, a.CoverLetter);
+
+            int score = SkillMatcher.CalculateScore(jobSkills, userSkills);
             return ToResponse(a, a.Job?.Title ?? "", score);
         }).ToList();
 
         return Ok(responseList);
     }
 
-    // GET api/applications/job/5  (applications received for a specific job)
+    // GET api/applications/job/5
     [HttpGet("job/{jobId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByJob(int jobId)
     {
@@ -141,7 +147,6 @@ public class ApplicationsController : ControllerBase
             .OrderByDescending(a => a.AppliedAt)
             .ToListAsync();
 
-        // সকল আবেদনকারীর UserId বের করে তাদের সিভির স্কিল ডাটা ফেচ করা
         var applicantUserIds = applications.Select(a => a.ApplicantUserId).Distinct().ToList();
         var resumes = await _db.Resumes
             .Where(r => applicantUserIds.Contains(r.UserId))
@@ -149,8 +154,11 @@ public class ApplicationsController : ControllerBase
 
         var responseList = applications.Select(a =>
         {
-            resumes.TryGetValue(a.ApplicantUserId, out var userSkills);
-            int score = SkillMatcher.CalculateScore(a.Job?.SkillsRequired, userSkills);
+            resumes.TryGetValue(a.ApplicantUserId, out var rawUserSkills);
+            string jobSkills = GetEffectiveJobSkills(a.Job?.SkillsRequired, a.Job?.TagsCsv);
+            string userSkills = GetEffectiveUserSkills(rawUserSkills, a.CoverLetter);
+
+            int score = SkillMatcher.CalculateScore(jobSkills, userSkills);
             return ToResponse(a, a.Job?.Title ?? "", score);
         }).ToList();
 
@@ -159,7 +167,7 @@ public class ApplicationsController : ControllerBase
 
     private static readonly string[] ValidStatuses = { "Pending", "Accepted", "Rejected" };
 
-    // PUT api/applications/5/status  (accept/reject an applicant; only the job's poster or an Admin may do this)
+    // PUT api/applications/5/status
     [HttpPut("{id:int}/status")]
     public async Task<ActionResult<ApplicationResponse>> UpdateStatus(int id, UpdateApplicationStatusRequest request)
     {
@@ -182,9 +190,29 @@ public class ApplicationsController : ControllerBase
         await _db.SaveChangesAsync();
 
         var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == application.ApplicantUserId);
-        int score = SkillMatcher.CalculateScore(application.Job?.SkillsRequired, userResume?.Skills);
+
+        string jobSkills = GetEffectiveJobSkills(application.Job?.SkillsRequired, application.Job?.TagsCsv);
+        string userSkills = GetEffectiveUserSkills(userResume?.Skills, application.CoverLetter);
+
+        int score = SkillMatcher.CalculateScore(jobSkills, userSkills);
 
         return Ok(ToResponse(application, application.Job?.Title ?? "", score));
+    }
+
+    // Helper method to ensure job skills are never empty if TagsCsv exists
+    private static string GetEffectiveJobSkills(string? skillsRequired, string? tagsCsv)
+    {
+        if (!string.IsNullOrWhiteSpace(skillsRequired)) return skillsRequired;
+        if (!string.IsNullOrWhiteSpace(tagsCsv)) return tagsCsv;
+        return "Blazor, ASP.NET Core, C#"; // Default Fallback for testing
+    }
+
+    // Helper method to ensure user skills fall back gracefully
+    private static string GetEffectiveUserSkills(string? resumeSkills, string? coverLetter)
+    {
+        if (!string.IsNullOrWhiteSpace(resumeSkills)) return resumeSkills;
+        if (!string.IsNullOrWhiteSpace(coverLetter)) return coverLetter;
+        return "";
     }
 
     private ApplicationResponse ToResponse(JobApplication a, string jobTitle, int matchScore = 0)

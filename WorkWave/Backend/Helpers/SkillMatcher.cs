@@ -7,23 +7,32 @@
             if (string.IsNullOrWhiteSpace(jobSkillsStr) || string.IsNullOrWhiteSpace(userSkillsStr))
                 return 0;
 
-            
-            var requiredSkills = jobSkillsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            // স্প্লিট করে ট্রিম এবং ছোট হাতের অক্ষরে রূপান্তর
+            var requiredSkills = jobSkillsStr.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                                              .Select(s => s.Trim().ToLower())
                                              .Where(s => !string.IsNullOrEmpty(s))
-                                             .ToHashSet();
+                                             .Distinct()
+                                             .ToList();
 
-            var userSkills = userSkillsStr.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            var userSkills = userSkillsStr.Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                                           .Select(s => s.Trim().ToLower())
                                           .Where(s => !string.IsNullOrEmpty(s))
-                                          .ToHashSet();
+                                          .Distinct()
+                                          .ToList();
 
             if (requiredSkills.Count == 0) return 100;
 
-            
-            int matchedCount = requiredSkills.Count(skill => userSkills.Contains(skill));
+            int matchedCount = 0;
 
-            
+            foreach (var reqSkill in requiredSkills)
+            {
+                // Exact match অথবা partial string match চেক করা
+                if (userSkills.Any(uSkill => uSkill.Contains(reqSkill) || reqSkill.Contains(uSkill)))
+                {
+                    matchedCount++;
+                }
+            }
+
             double percentage = ((double)matchedCount / requiredSkills.Count) * 100;
             return (int)Math.Round(percentage);
         }
