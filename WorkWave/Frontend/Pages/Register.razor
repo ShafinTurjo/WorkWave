@@ -19,6 +19,18 @@
                 <div class="alert alert-danger py-2 small">@errorMessage</div>
             }
 
+            @if (registeredEmail is not null)
+            {
+                <div class="alert alert-success">
+                    <strong>Almost done!</strong> We've sent a verification link to <strong>@registeredEmail</strong>.
+                    Please check your inbox (and spam folder) and click the link before logging in.
+                </div>
+                <div class="text-center mt-3">
+                    <a href="login" class="btn btn-primary fw-bold px-4">Go to Login</a>
+                </div>
+            }
+            else
+            {
             <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration">
                 <DataAnnotationsValidator />
 
@@ -58,6 +70,7 @@
                     @(isSubmitting ? Loc.T("btn_creating_account") : Loc.T("btn_register"))
                 </button>
             </EditForm>
+            }
 
             <div class="text-center mt-4">
                 <span class="text-muted small">@Loc.T("msg_have_account") </span>
@@ -70,6 +83,7 @@
 @code {
     private RegisterModel registerModel = new RegisterModel();
     private string? errorMessage;
+    private string? registeredEmail;
     private bool isSubmitting = false;
 
     protected override void OnInitialized()
@@ -102,12 +116,7 @@
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<RegisterResult>();
-                if (result is not null)
-                {
-                    await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email, result.Role);
-                    var destination = result.Role == "Employer" ? "/employer" : "/worker";
-                    Navigation.NavigateTo(destination);
-                }
+                registeredEmail = result?.Email ?? registerModel.Email;
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
@@ -144,9 +153,7 @@
 
     private class RegisterResult
     {
-        public int UserId { get; set; }
-        public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
-        public string Role { get; set; } = "";
+        public string Message { get; set; } = "";
     }
 }

@@ -16,7 +16,21 @@
 
             @if (!string.IsNullOrEmpty(errorMessage))
             {
-                <div class="alert alert-danger py-2 small">@errorMessage</div>
+                <div class="alert alert-danger py-2 small">
+                    @errorMessage
+                    @if (showResendOption)
+                    {
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger" disabled="@isResending" @onclick="HandleResend">
+                                @(isResending ? "Sending..." : "Resend verification email")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(resendMessage))
+            {
+                <div class="alert alert-success py-2 small">@resendMessage</div>
             }
 
             <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
@@ -58,7 +72,10 @@
 @code {
     private LoginModel loginModel = new LoginModel();
     private string? errorMessage;
+    private string? resendMessage;
+    private bool showResendOption = false;
     private bool isSubmitting = false;
+    private bool isResending = false;
 
     protected override void OnInitialized()
     {
@@ -68,6 +85,8 @@
     private async Task HandleLogin()
     {
         errorMessage = null;
+        resendMessage = null;
+        showResendOption = false;
         isSubmitting = true;
 
         try
@@ -93,6 +112,11 @@
                     Navigation.NavigateTo(destination);
                 }
             }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                errorMessage = "Please verify your email address before logging in. Check your inbox for the verification link.";
+                showResendOption = true;
+            }
             else
             {
                 errorMessage = Loc.T("err_invalid_credentials");
@@ -111,6 +135,28 @@
     public void Dispose()
     {
         Loc.OnChange -= StateHasChanged;
+    }
+
+    private async Task HandleResend()
+    {
+        isResending = true;
+        resendMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/resend-verification", new { email = loginModel.Email });
+            resendMessage = response.IsSuccessStatusCode
+                ? "If an account with that email needs verifying, a new link has been sent."
+                : "Could not resend the verification email. Please try again.";
+        }
+        catch (Exception)
+        {
+            resendMessage = "Could not reach the server. Please try again.";
+        }
+        finally
+        {
+            isResending = false;
+        }
     }
 
     public class LoginModel

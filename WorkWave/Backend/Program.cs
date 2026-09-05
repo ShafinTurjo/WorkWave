@@ -1,5 +1,7 @@
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
+using Backend.Options;
+using Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Controllers (traditional [ApiController] style).
 builder.Services.AddControllers();
 
+builder.Services.Configure<EmailOptions>(
+    builder.Configuration.GetSection("Email"));
+
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 // CORS: allow the Blazor WASM Frontend (its dev-server origins) to call this API.
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
 builder.Services.AddCors(options =>

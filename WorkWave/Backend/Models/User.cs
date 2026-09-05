@@ -21,6 +21,13 @@ public class User
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public bool IsEmailVerified { get; set; } = false;
+
+    [MaxLength(100)]
+    public string? EmailVerificationToken { get; set; }
+
+    public DateTime? EmailVerificationTokenExpiresAt { get; set; }
+
     public ICollection<Job> PostedJobs { get; set; } = new List<Job>();
     public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
 }

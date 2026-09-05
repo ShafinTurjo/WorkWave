@@ -18,6 +18,12 @@ public class RegisterRequest
     public string Password { get; set; } = "";
 }
 
+public class RegisterResponse
+{
+    public string Email { get; set; } = "";
+    public string Message { get; set; } = "";
+}
+
 public class LoginRequest
 {
     [Required, EmailAddress]
@@ -32,5 +38,20 @@ public class AuthResponse
     public int UserId { get; set; }
     public string FullName { get; set; } = "";
     public string Role { get; set; } = "";
+    public string Email { get; set; } = "";
+}
+
+public class VerifyEmailRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = "";
+
+    [Required]
+    public string Token { get; set; } = "";
+}
+
+public class ResendVerificationRequest
+{
+    [Required, EmailAddress]
     public string Email { get; set; } = "";
 }

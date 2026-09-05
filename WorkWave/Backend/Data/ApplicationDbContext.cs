@@ -23,6 +23,12 @@ public class ApplicationDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        // Any user created before this feature existed (or seeded directly, like Admin)
+        // is treated as already verified — only new self-registrations start unverified.
+        modelBuilder.Entity<User>()
+            .Property(u => u.IsEmailVerified)
+            .HasDefaultValue(true);
+
         modelBuilder.Entity<Job>()
             .HasOne(j => j.PostedByUser)
             .WithMany(u => u.PostedJobs)
@@ -57,6 +63,7 @@ public class ApplicationDbContext : DbContext
             Email = "admin@workwave.com",
             PasswordHash = "100000.DC1OA2PJBVgR8D+W3glHhQ==.UpIuy2g6O9F7r5IGi31XJmw4FAEr/EZIoZYVmTgPBZg=",
             Role = "Admin",
+            IsEmailVerified = true,
             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         });
     }

@@ -362,6 +362,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Local dev secrets (SMTP password, etc.) — never commit this
+WorkWave/Backend/appsettings.Development.json
+
 # Uploaded resume files (keep the folder structure, ignore the actual uploads)
 WorkWave/Backend/wwwroot/uploads/resumes/*
 !WorkWave/Backend/wwwroot/uploads/resumes/.gitkeep

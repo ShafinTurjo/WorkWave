@@ -1,0 +1,92 @@
+﻿@page "/verify-email"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow p-4 rounded text-center">
+            @if (isLoading)
+            {
+                <div class="spinner-border text-primary mx-auto mb-3" role="status"></div>
+                <p class="text-muted">Verifying your email...</p>
+            }
+            else if (isSuccess)
+            {
+                <div class="text-success mb-3"><i class="bi bi-check-circle-fill" style="font-size: 3rem;"></i></div>
+                <h4 class="fw-bold mb-2">Email Verified!</h4>
+                <p class="text-muted">@message</p>
+                <a href="login" class="btn btn-primary fw-bold px-4 mt-2">Go to Login</a>
+            }
+            else
+            {
+                <div class="text-danger mb-3"><i class="bi bi-x-circle-fill" style="font-size: 3rem;"></i></div>
+                <h4 class="fw-bold mb-2">Verification Failed</h4>
+                <p class="text-muted">@message</p>
+                <a href="login" class="btn btn-outline-primary fw-bold px-4 mt-2">Back to Login</a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private bool isSuccess = false;
+    private string message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var queryParams = ParseQueryString(uri.Query);
+
+        queryParams.TryGetValue("email", out var email);
+        queryParams.TryGetValue("token", out var token);
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            isLoading = false;
+            isSuccess = false;
+            message = "This verification link is missing required information.";
+            return;
+        }
+
+        try
+        {
+            var response = await Http.GetAsync($"api/auth/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}");
+            var result = await response.Content.ReadFromJsonAsync<VerifyResult>();
+
+            isSuccess = response.IsSuccessStatusCode;
+            message = result?.Message ?? (isSuccess ? "Your email has been verified." : "This verification link is invalid or has expired.");
+        }
+        catch (Exception)
+        {
+            isSuccess = false;
+            message = "Could not reach the server. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private static Dictionary<string, string> ParseQueryString(string query)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(query)) return result;
+
+        var trimmed = query.TrimStart('?');
+        foreach (var pair in trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            var key = Uri.UnescapeDataString(parts[0]);
+            var value = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
+            result[key] = value;
+        }
+        return result;
+    }
+
+    private class VerifyResult
+    {
+        public string Message { get; set; } = "";
+    }
+}
