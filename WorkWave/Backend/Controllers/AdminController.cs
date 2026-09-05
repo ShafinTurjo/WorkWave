@@ -21,6 +21,24 @@ public class AdminController : ControllerBase
         return await _db.Users.AnyAsync(u => u.Id == adminUserId && u.Role == "Admin");
     }
 
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats([FromQuery] int adminUserId)
+    {
+        if (!await IsAdminAsync(adminUserId)) return Forbid();
+
+        var stats = new
+        {
+            TotalUsers = await _db.Users.CountAsync(),
+            TotalEmployers = await _db.Users.CountAsync(u => u.Role == "Employer"),
+            TotalWorkers = await _db.Users.CountAsync(u => u.Role == "Worker"),
+            TotalJobs = await _db.Jobs.CountAsync(),
+            ActiveJobs = await _db.Jobs.CountAsync(j => j.IsActive),
+            TotalApplications = await _db.JobApplications.CountAsync()
+        };
+
+        return Ok(stats);
+    }
+
     // GET api/admin/users?adminUserId=1
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers([FromQuery] int adminUserId)
@@ -40,6 +58,22 @@ public class AdminController : ControllerBase
             .ToListAsync();
 
         return Ok(users);
+    }
+
+    // PUT api/admin/users/5/role?adminUserId=1
+    [HttpPut("users/{id:int}/role")]
+    public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole, [FromQuery] int adminUserId)
+    {
+        if (!await IsAdminAsync(adminUserId)) return Forbid();
+        if (id == adminUserId) return BadRequest(new { message = "You cannot change your own admin role." });
+
+        var user = await _db.Users.FindAsync(id);
+        if (user is null) return NotFound(new { message = $"User {id} not found." });
+
+        user.Role = newRole;
+        await _db.SaveChangesAsync();
+
+        return NoContent();
     }
 
     // DELETE api/admin/users/5?adminUserId=1
@@ -72,6 +106,7 @@ public class AdminController : ControllerBase
                 j.Company,
                 j.Location,
                 j.JobType,
+                j.IsActive,
                 j.PostedAt,
                 j.PostedByUserId,
                 PostedByName = j.PostedByUser != null ? j.PostedByUser.FullName : ""
@@ -110,10 +145,25 @@ public class AdminController : ControllerBase
                 JobTitle = a.Job != null ? a.Job.Title : "",
                 a.ApplicantName,
                 a.ApplicantEmail,
+                a.Status,
                 a.AppliedAt
             })
             .ToListAsync();
 
         return Ok(applications);
+    }
+
+    // DELETE api/admin/applications/5?adminUserId=1
+    [HttpDelete("applications/{id:int}")]
+    public async Task<IActionResult> DeleteApplication(int id, [FromQuery] int adminUserId)
+    {
+        if (!await IsAdminAsync(adminUserId)) return Forbid();
+
+        var app = await _db.JobApplications.FindAsync(id);
+        if (app is null) return NotFound(new { message = $"Application {id} not found." });
+
+        _db.JobApplications.Remove(app);
+        await _db.SaveChangesAsync();
+        return NoContent();
     }
 }
