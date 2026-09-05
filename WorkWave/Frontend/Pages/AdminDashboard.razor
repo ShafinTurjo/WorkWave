@@ -305,18 +305,20 @@
                 <div class="card-panel h-100">
                     <h6 class="fw-bold text-dark mb-3 fs-6">Recent activity</h6>
                     <div class="d-flex flex-column gap-1">
-                        <div class="activity-item">
-                            <i class="bi bi-briefcase text-primary activity-icon"></i>
-                            <span>Tomal posted <strong class="fw-semibold">Junior Developer</strong></span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="bi bi-file-earmark-text text-success activity-icon"></i>
-                            <span>shifa applied for <strong class="fw-semibold">Data Entry</strong></span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="bi bi-person-plus text-warning activity-icon"></i>
-                            <span>jemima joined as <strong class="fw-semibold">Worker</strong></span>
-                        </div>
+                        @if (stats.RecentActivities != null && stats.RecentActivities.Any())
+                        {
+                            @foreach (var act in stats.RecentActivities)
+                            {
+                                <div class="activity-item">
+                                    <i class="bi @act.Icon activity-icon"></i>
+                                    <span>@act.Text <strong class="fw-semibold">@act.Highlight</strong></span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted small py-2">No recent activity recorded.</div>
+                        }
                     </div>
                 </div>
             </div>
@@ -639,6 +641,13 @@
         await JS.InvokeVoidAsync("eval", $"let a = document.createElement('a'); a.href = '{fileUrl}'; a.download = 'users_export.csv'; a.click();");
     }
 
+    private class ActivityItemModel
+    {
+        public string Icon { get; set; } = "";
+        public string Text { get; set; } = "";
+        public string Highlight { get; set; } = "";
+    }
+
     private class StatsModel
     {
         public int TotalUsers { get; set; }
@@ -649,6 +658,7 @@
         public int PendingApplications { get; set; }
         public int FlaggedContent { get; set; }
         public int[] DailySignups { get; set; } = new int[7];
+        public List<ActivityItemModel> RecentActivities { get; set; } = new();
     }
 
     private class UserItem

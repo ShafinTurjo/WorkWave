@@ -27,12 +27,60 @@ public class AdminController : ControllerBase
 
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
-        // গত ৭ দিনের প্রতিদিনের সাইনআপ সংখ্যা বের করা
+        // গত ৭ দিনের প্রতিদিনের সাইনআপ সংখ্যা
         var dailySignups = new int[7];
         for (int i = 0; i < 7; i++)
         {
             var day = DateTime.UtcNow.Date.AddDays(-6 + i);
             dailySignups[i] = await _db.Users.CountAsync(u => u.CreatedAt.Date == day);
+        }
+
+        // ডায়নামিক রিসেন্ট অ্যাক্টিভিটি ডাটা তৈরি
+        var recentActivityList = new List<object>();
+
+        var latestJob = await _db.Jobs
+            .Include(j => j.PostedByUser)
+            .OrderByDescending(j => j.PostedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestJob != null)
+        {
+            recentActivityList.Add(new
+            {
+                Icon = "bi-briefcase text-primary",
+                Text = $"{latestJob.PostedByUser?.FullName ?? "Someone"} posted",
+                Highlight = latestJob.Title
+            });
+        }
+
+        var latestApp = await _db.JobApplications
+            .Include(a => a.Job)
+            .OrderByDescending(a => a.AppliedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestApp != null)
+        {
+            recentActivityList.Add(new
+            {
+                Icon = "bi-file-earmark-text text-success",
+                Text = $"{latestApp.ApplicantName} applied for",
+                Highlight = latestApp.Job?.Title ?? "a Job"
+            });
+        }
+
+        var latestUser = await _db.Users
+            .Where(u => u.Role != "Admin")
+            .OrderByDescending(u => u.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (latestUser != null)
+        {
+            recentActivityList.Add(new
+            {
+                Icon = "bi-person-plus text-warning",
+                Text = $"{latestUser.FullName} joined as",
+                Highlight = latestUser.Role
+            });
         }
 
         var stats = new
@@ -44,7 +92,8 @@ public class AdminController : ControllerBase
             TotalApplications = await _db.JobApplications.CountAsync(),
             PendingApplications = await _db.JobApplications.CountAsync(a => a.Status == "Pending"),
             FlaggedContent = 0,
-            DailySignups = dailySignups
+            DailySignups = dailySignups,
+            RecentActivities = recentActivityList
         };
 
         return Ok(stats);
