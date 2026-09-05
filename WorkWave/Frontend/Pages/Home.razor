@@ -1,13 +1,17 @@
 ﻿@page "/"
+@using Frontend.Services
+@inject LocalizationService Loc
+@implements IDisposable
+
 <PageTitle>WorkWave - Find & Post Jobs</PageTitle>
 
 <div class="bg-primary text-white text-center py-5 rounded-3 mb-5 shadow-lg" style="background: linear-gradient(135deg, #4f46e5, #0ea5e9) !important;">
     <div class="container py-3">
-        <h1 class="display-4 fw-bold">Find the Perfect Job or Hire Top Talent</h1>
-        <p class="lead mt-3 mb-4 opacity-75">Connect with opportunities, showcase your skills, and streamline your workflow with WorkWave.</p>
+        <h1 class="display-4 fw-bold">@Loc.T("home_hero_title")</h1>
+        <p class="lead mt-3 mb-4 opacity-75">@Loc.T("home_hero_subtitle")</p>
         <div class="d-flex justify-content-center gap-3">
-            <a href="browse-jobs" class="btn btn-light btn-lg fw-semibold px-4">Browse Jobs</a>
-            <a href="post-job" class="btn btn-outline-light btn-lg fw-semibold px-4">Post a Job</a>
+            <a href="browse-jobs" class="btn btn-light btn-lg fw-semibold px-4">@Loc.T("home_browse_jobs")</a>
+            <a href="post-job" class="btn btn-outline-light btn-lg fw-semibold px-4">@Loc.T("home_post_job")</a>
         </div>
     </div>
 </div>
@@ -17,8 +21,8 @@
         <div class="card h-100 border-0 shadow-sm p-4">
             <div class="card-body">
                 <i class="bi bi-search text-primary display-5 mb-3"></i>
-                <h5 class="card-title fw-bold">Smart Job Search</h5>
-                <p class="card-text text-muted">Easily filter and find projects tailored to your specific skillset and interests.</p>
+                <h5 class="card-title fw-bold">@Loc.T("home_feature1_title")</h5>
+                <p class="card-text text-muted">@Loc.T("home_feature1_desc")</p>
             </div>
         </div>
     </div>
@@ -26,8 +30,8 @@
         <div class="card h-100 border-0 shadow-sm p-4">
             <div class="card-body">
                 <i class="bi bi-file-earmark-text text-primary display-5 mb-3"></i>
-                <h5 class="card-title fw-bold">Easy Applications</h5>
-                <p class="card-text text-muted">Apply to jobs in seconds with your customized profile and track status instantly.</p>
+                <h5 class="card-title fw-bold">@Loc.T("home_feature2_title")</h5>
+                <p class="card-text text-muted">@Loc.T("home_feature2_desc")</p>
             </div>
         </div>
     </div>
@@ -35,15 +39,27 @@
         <div class="card h-100 border-0 shadow-sm p-4">
             <div class="card-body">
                 <i class="bi bi-shield-check text-primary display-5 mb-3"></i>
-                <h5 class="card-title fw-bold">Verified Projects</h5>
-                <p class="card-text text-muted">Post and collaborate on authentic projects with complete confidence and security.</p>
+                <h5 class="card-title fw-bold">@Loc.T("home_feature3_title")</h5>
+                <p class="card-text text-muted">@Loc.T("home_feature3_desc")</p>
             </div>
         </div>
     </div>
 </div>
 
 <div class="bg-dark text-white p-5 rounded-3 text-center shadow-sm">
-    <h2 class="fw-bold mb-3">Ready to get started?</h2>
-    <p class="text-muted mb-4">Create an account today to start posting or applying for jobs.</p>
-    <a href="register" class="btn btn-primary btn-lg px-4">Create Account</a>
+    <h2 class="fw-bold mb-3">@Loc.T("home_cta_title")</h2>
+    <p class="text-muted mb-4">@Loc.T("home_cta_subtitle")</p>
+    <a href="register" class="btn btn-primary btn-lg px-4">@Loc.T("home_create_account")</a>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
+    }
+}

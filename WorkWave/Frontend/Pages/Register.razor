@@ -4,13 +4,14 @@
 @inject HttpClient Http
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 col-lg-5">
         <div class="card border-0 shadow p-4 rounded">
             <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary">Create Account</h3>
-                <p class="text-muted small">Join WorkWave to find or post opportunities</p>
+                <h3 class="fw-bold text-primary">@Loc.T("register_title")</h3>
+                <p class="text-muted small">@Loc.T("register_subtitle")</p>
             </div>
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -22,45 +23,45 @@
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">I want to:</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_i_want_to")</label>
                      <InputSelect @bind-Value="registerModel.Role" class="form-select">
-                        <option value="Worker">Apply for Jobs (Worker)</option>
-                        <option value="Employer">Post Jobs (Employer)</option>
+                        <option value="Worker">@Loc.T("role_worker")</option>
+                        <option value="Employer">@Loc.T("role_employer")</option>
                     </InputSelect>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Full Name</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_full_name")</label>
                     <InputText @bind-Value="registerModel.FullName" class="form-control" />
                     <ValidationMessage For="@(() => registerModel.FullName)" class="text-danger small" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Email Address</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_email")</label>
                     <InputText @bind-Value="registerModel.Email" class="form-control" />
                     <ValidationMessage For="@(() => registerModel.Email)" class="text-danger small" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Password</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_password")</label>
                     <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
                     <ValidationMessage For="@(() => registerModel.Password)" class="text-danger small" />
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold">Confirm Password</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_confirm_password")</label>
                     <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
                     <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger small" />
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 fw-bold py-2" disabled="@isSubmitting">
-                    @(isSubmitting ? "Creating account..." : "Register")
+                    @(isSubmitting ? Loc.T("btn_creating_account") : Loc.T("btn_register"))
                 </button>
             </EditForm>
 
             <div class="text-center mt-4">
-                <span class="text-muted small">Already have an account? </span>
-                <a href="login" class="text-primary fw-bold text-decoration-none small">Login here</a>
+                <span class="text-muted small">@Loc.T("msg_have_account") </span>
+                <a href="login" class="text-primary fw-bold text-decoration-none small">@Loc.T("link_login_here")</a>
             </div>
         </div>
     </div>
@@ -71,13 +72,18 @@
     private string? errorMessage;
     private bool isSubmitting = false;
 
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += StateHasChanged;
+    }
+
     private async Task HandleRegistration()
     {
         errorMessage = null;
 
         if (registerModel.Password != registerModel.ConfirmPassword)
         {
-            errorMessage = "Passwords do not match.";
+            errorMessage = Loc.T("err_passwords_mismatch");
             return;
         }
 
@@ -85,7 +91,7 @@
 
         try
         {
-                       var response = await Http.PostAsJsonAsync("api/auth/register", new
+            var response = await Http.PostAsJsonAsync("api/auth/register", new
             {
                 fullName = registerModel.FullName,
                 email = registerModel.Email,
@@ -105,16 +111,16 @@
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                errorMessage = "An account with this email already exists.";
+                errorMessage = Loc.T("err_email_exists");
             }
             else
             {
-                errorMessage = "Registration failed. Please check your details and try again.";
+                errorMessage = Loc.T("err_registration_failed");
             }
         }
         catch (Exception)
         {
-            errorMessage = "Could not reach the server. Please try again.";
+            errorMessage = Loc.T("err_server_unreachable");
         }
         finally
         {
@@ -122,7 +128,12 @@
         }
     }
 
-       public class RegisterModel
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
+    }
+
+    public class RegisterModel
     {
         public string Role { get; set; } = "Worker";
         public string FullName { get; set; } = "";

@@ -4,13 +4,14 @@
 @inject HttpClient Http
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-5">
         <div class="card border-0 shadow p-4 rounded">
             <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary">Welcome Back</h3>
-                <p class="text-muted small">Sign in to access your WorkWave account</p>
+                <h3 class="fw-bold text-primary">@Loc.T("login_title")</h3>
+                <p class="text-muted small">@Loc.T("login_subtitle")</p>
             </div>
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -22,13 +23,13 @@
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Email Address</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_email")</label>
                     <InputText @bind-Value="loginModel.Email" class="form-control" />
                     <ValidationMessage For="@(() => loginModel.Email)" class="text-danger small" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Password</label>
+                    <label class="form-label fw-bold">@Loc.T("lbl_password")</label>
                     <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
                     <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small" />
                 </div>
@@ -36,19 +37,19 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div class="form-check">
                         <InputCheckbox @bind-Value="loginModel.RememberMe" class="form-check-input" id="rememberMe" />
-                        <label class="form-check-label small" for="rememberMe">Remember me</label>
+                        <label class="form-check-label small" for="rememberMe">@Loc.T("remember_me")</label>
                     </div>
-                    <a href="forgot-password" class="text-primary fw-bold text-decoration-none small">Forgot password?</a>
+                    <a href="forgot-password" class="text-primary fw-bold text-decoration-none small">@Loc.T("forgot_password")</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 fw-bold py-2" disabled="@isSubmitting">
-                    @(isSubmitting ? "Signing in..." : "Sign In")
+                    @(isSubmitting ? Loc.T("btn_signing_in") : Loc.T("btn_signin"))
                 </button>
             </EditForm>
 
             <div class="text-center mt-4">
-                <span class="text-muted small">Don't have an account? </span>
-                <a href="register" class="text-primary fw-bold text-decoration-none small">Create one here</a>
+                <span class="text-muted small">@Loc.T("msg_no_account") </span>
+                <a href="register" class="text-primary fw-bold text-decoration-none small">@Loc.T("link_create_account")</a>
             </div>
         </div>
     </div>
@@ -58,6 +59,11 @@
     private LoginModel loginModel = new LoginModel();
     private string? errorMessage;
     private bool isSubmitting = false;
+
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += StateHasChanged;
+    }
 
     private async Task HandleLogin()
     {
@@ -74,7 +80,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                               var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+                var result = await response.Content.ReadFromJsonAsync<LoginResult>();
                 if (result is not null)
                 {
                     await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email, result.Role);
@@ -89,17 +95,22 @@
             }
             else
             {
-                errorMessage = "Invalid email or password.";
+                errorMessage = Loc.T("err_invalid_credentials");
             }
         }
         catch (Exception)
         {
-            errorMessage = "Could not reach the server. Please try again.";
+            errorMessage = Loc.T("err_server_unreachable");
         }
         finally
         {
             isSubmitting = false;
         }
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 
     public class LoginModel
@@ -109,7 +120,7 @@
         public bool RememberMe { get; set; } = false;
     }
 
-        private class LoginResult
+    private class LoginResult
     {
         public int UserId { get; set; }
         public string FullName { get; set; } = "";
