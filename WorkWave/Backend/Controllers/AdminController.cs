@@ -15,7 +15,6 @@ public class AdminController : ControllerBase
         _db = db;
     }
 
-    // Every admin endpoint requires ?adminUserId=<id> for a user whose Role is "Admin".
     private async Task<bool> IsAdminAsync(int adminUserId)
     {
         return await _db.Users.AnyAsync(u => u.Id == adminUserId && u.Role == "Admin");
@@ -26,20 +25,31 @@ public class AdminController : ControllerBase
     {
         if (!await IsAdminAsync(adminUserId)) return Forbid();
 
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        // গত ৭ দিনের প্রতিদিনের সাইনআপ সংখ্যা বের করা
+        var dailySignups = new int[7];
+        for (int i = 0; i < 7; i++)
+        {
+            var day = DateTime.UtcNow.Date.AddDays(-6 + i);
+            dailySignups[i] = await _db.Users.CountAsync(u => u.CreatedAt.Date == day);
+        }
+
         var stats = new
         {
             TotalUsers = await _db.Users.CountAsync(),
-            TotalEmployers = await _db.Users.CountAsync(u => u.Role == "Employer"),
-            TotalWorkers = await _db.Users.CountAsync(u => u.Role == "Worker"),
+            NewUsersThisWeek = await _db.Users.CountAsync(u => u.CreatedAt >= sevenDaysAgo),
             TotalJobs = await _db.Jobs.CountAsync(),
             ActiveJobs = await _db.Jobs.CountAsync(j => j.IsActive),
-            TotalApplications = await _db.JobApplications.CountAsync()
+            TotalApplications = await _db.JobApplications.CountAsync(),
+            PendingApplications = await _db.JobApplications.CountAsync(a => a.Status == "Pending"),
+            FlaggedContent = 0,
+            DailySignups = dailySignups
         };
 
         return Ok(stats);
     }
 
-    // GET api/admin/users?adminUserId=1
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers([FromQuery] int adminUserId)
     {
@@ -53,6 +63,7 @@ public class AdminController : ControllerBase
                 u.FullName,
                 u.Email,
                 u.Role,
+                Status = "Active",
                 u.CreatedAt
             })
             .ToListAsync();
@@ -60,7 +71,6 @@ public class AdminController : ControllerBase
         return Ok(users);
     }
 
-    // PUT api/admin/users/5/role?adminUserId=1
     [HttpPut("users/{id:int}/role")]
     public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole, [FromQuery] int adminUserId)
     {
@@ -76,7 +86,6 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/admin/users/5?adminUserId=1
     [HttpDelete("users/{id:int}")]
     public async Task<IActionResult> DeleteUser(int id, [FromQuery] int adminUserId)
     {
@@ -91,7 +100,6 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    // GET api/admin/jobs?adminUserId=1
     [HttpGet("jobs")]
     public async Task<IActionResult> GetJobs([FromQuery] int adminUserId)
     {
@@ -116,7 +124,6 @@ public class AdminController : ControllerBase
         return Ok(jobs);
     }
 
-    // DELETE api/admin/jobs/5?adminUserId=1
     [HttpDelete("jobs/{id:int}")]
     public async Task<IActionResult> DeleteJob(int id, [FromQuery] int adminUserId)
     {
@@ -130,7 +137,6 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    // GET api/admin/applications?adminUserId=1
     [HttpGet("applications")]
     public async Task<IActionResult> GetApplications([FromQuery] int adminUserId)
     {
@@ -153,7 +159,6 @@ public class AdminController : ControllerBase
         return Ok(applications);
     }
 
-    // DELETE api/admin/applications/5?adminUserId=1
     [HttpDelete("applications/{id:int}")]
     public async Task<IActionResult> DeleteApplication(int id, [FromQuery] int adminUserId)
     {

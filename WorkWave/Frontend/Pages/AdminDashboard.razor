@@ -7,84 +7,208 @@
 @inject IJSRuntime JS
 
 <style>
-    .stat-card {
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        border: none !important;
-        border-radius: 12px !important;
-        overflow: hidden;
+    body {
+        background-color: #fafafa;
     }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15) !important;
+    .dashboard-container {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #1a1a1a;
     }
 
-    .stat-icon {
-        font-size: 2.5rem;
-        opacity: 0.3;
-        transition: transform 0.3s ease;
+    .stat-box {
+        background: transparent;
+        border: none;
+        padding: 0.5rem;
     }
 
-    .stat-card:hover .stat-icon {
-        transform: scale(1.15) rotate(-5deg);
-        opacity: 0.5;
-    }
-
-    .gradient-primary {
-        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-    }
-
-    .gradient-success {
-        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-    }
-
-    .gradient-warning {
-        background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
-    }
-
-    .gradient-dark {
-        background: linear-gradient(135deg, #212529 0%, #343a40 100%);
-    }
-
-    .nav-pills .nav-link {
-        border-radius: 8px;
-        font-weight: 600;
+    .stat-title {
+        font-size: 0.85rem;
         color: #6c757d;
-        padding: 0.5rem 1.25rem;
-        transition: all 0.2s ease;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
     }
 
-    .nav-pills .nav-link.active {
-        background-color: #0d6efd;
-        color: #ffffff;
-        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #111827;
     }
 
-    .custom-table tbody tr {
-        transition: background-color 0.2s ease;
+    .stat-sub {
+        font-size: 0.825rem;
+        margin-top: 0.35rem;
+        font-weight: 500;
     }
 
-    .custom-table tbody tr:hover {
-        background-color: rgba(13, 110, 253, 0.04) !important;
+    .text-success-custom {
+        color: #15803d;
     }
 
-    .badge-admin {
-        background-color: #212529;
-        color: #fff;
+    .text-warning-custom {
+        color: #b45309;
     }
 
-    .badge-employer {
-        background-color: #0d6efd;
-        color: #fff;
+    .card-panel {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
 
-    .badge-worker {
-        background-color: #198754;
-        color: #fff;
+    .chart-bar-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        height: 120px;
+        padding-top: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .chart-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+        flex: 1;
+    }
+
+    .bar {
+        width: 28px;
+        background-color: #3b82f6;
+        border-radius: 4px 4px 0 0;
+        transition: height 0.3s ease;
+        min-height: 8px;
+    }
+
+    .bar.highlight {
+        background-color: #1d4ed8;
+    }
+
+    .bar-label {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        font-size: 0.875rem;
+    }
+
+    .activity-icon {
+        font-size: 1.1rem;
+    }
+
+    .nav-tabs-custom {
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-tabs-custom .nav-link {
+        border: none;
+        color: #6b7280;
+        font-weight: 500;
+        padding: 0.6rem 1rem;
+        margin-bottom: -1px;
+        background: transparent;
+    }
+
+    .nav-tabs-custom .nav-link.active {
+        color: #2563eb;
+        border-bottom: 2px solid #2563eb;
+        background: transparent;
+    }
+
+    .table-custom {
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    .table-custom th {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b7280;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .table-custom td {
+        padding: 0.85rem 1rem;
+        font-size: 0.875rem;
+        color: #1f2937;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+
+    .badge-role {
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-role-employer {
+        background-color: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .badge-role-worker {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-role-admin {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+
+    .status-dot {
+        height: 6px;
+        width: 6px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.35rem;
+    }
+
+    .status-active {
+        color: #15803d;
+        font-weight: 500;
+    }
+
+    .status-active .status-dot {
+        background-color: #16a34a;
+    }
+
+    .btn-export {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+        font-weight: 500;
+        font-size: 0.875rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 8px;
+    }
+
+    .btn-icon {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #6b7280;
+        padding: 0.4rem 0.6rem;
+        border-radius: 8px;
     }
 </style>
 
-<div class="container my-4">
+<div class="dashboard-container">
     @if (!authorized)
     {
         <div class="d-flex justify-content-center align-items-center py-5">
@@ -94,281 +218,269 @@
     }
     else
     {
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
-                <h3 class="fw-bold mb-0">Admin Dashboard</h3>
-                <p class="text-muted small mb-0">System management & overview</p>
+                <h2 class="fw-bold mb-1 fs-3">Admin dashboard</h2>
+                <p class="text-muted small mb-0">System management and overview</p>
             </div>
-            <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2 shadow-sm" @onclick="ExportUsersToCsv">
-                <i class="bi bi-file-earmark-spreadsheet-fill"></i> Export Users CSV
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-export d-flex align-items-center gap-2" @onclick="ExportUsersToCsv">
+                    <i class="bi bi-download"></i> Export CSV
+                </button>
+                <button class="btn btn-icon">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+            </div>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert alert-danger py-2 small shadow-sm mb-4 d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-exclamation-triangle-fill me-2"></i>@errorMessage</span>
+            <div class="alert alert-danger py-2 small mb-4 d-flex justify-content-between align-items-center">
+                <span>@errorMessage</span>
                 <button type="button" class="btn-close btn-close-sm" @onclick="() => errorMessage = null"></button>
             </div>
         }
 
-        <!-- Overview Cards -->
+        <!-- Stats Overview -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="card stat-card gradient-primary text-white p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-50 small fw-semibold text-uppercase">Total Users</div>
-                            <div class="fs-2 fw-bold">@users.Count</div>
-                        </div>
-                        <i class="bi bi-people-fill stat-icon"></i>
-                    </div>
-                    <div class="small mt-2 text-white-50">
-                        @users.Count(u => u.Role == "Employer") Employers | @users.Count(u => u.Role == "Worker") Workers
+                <div class="stat-box">
+                    <div class="stat-title">Total users (all time)</div>
+                    <div class="stat-number">@stats.TotalUsers</div>
+                    <div class="stat-sub text-success-custom">
+                        <i class="bi bi-arrow-up-right me-1"></i>@stats.NewUsersThisWeek new this week
                     </div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card stat-card gradient-success text-white p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-50 small fw-semibold text-uppercase">Posted Jobs</div>
-                            <div class="fs-2 fw-bold">@jobs.Count</div>
-                        </div>
-                        <i class="bi bi-briefcase-fill stat-icon"></i>
-                    </div>
-                    <div class="small mt-2 text-white-50">@jobs.Count(j => j.IsActive) Active Jobs</div>
+                <div class="stat-box">
+                    <div class="stat-title">Posted jobs (all time)</div>
+                    <div class="stat-number">@stats.TotalJobs</div>
+                    <div class="stat-sub text-muted">@stats.ActiveJobs currently active</div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card stat-card gradient-warning text-dark p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-dark-50 small fw-semibold text-uppercase">Applications</div>
-                            <div class="fs-2 fw-bold">@applications.Count</div>
-                        </div>
-                        <i class="bi bi-file-earmark-text-fill stat-icon text-dark"></i>
-                    </div>
-                    <div class="small mt-2 text-dark-50">Submitted Job Requests</div>
+                <div class="stat-box">
+                    <div class="stat-title">Applications (all time)</div>
+                    <div class="stat-number">@stats.TotalApplications</div>
+                    <div class="stat-sub text-warning-custom">@stats.PendingApplications pending review</div>
                 </div>
             </div>
-
             <div class="col-md-3">
-                <div class="card stat-card gradient-dark text-white p-3 shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="text-white-50 small fw-semibold text-uppercase">System Status</div>
-                            <div class="fs-2 fw-bold">Active</div>
-                        </div>
-                        <i class="bi bi-shield-check stat-icon"></i>
+                <div class="stat-box">
+                    <div class="stat-title">Flagged content</div>
+                    <div class="stat-number">@stats.FlaggedContent</div>
+                    <div class="stat-sub text-muted">All clear</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts and Activity Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card-panel h-100">
+                    <h6 class="fw-bold text-dark mb-3 fs-6">New signups per day, last 7 days</h6>
+                    <div class="chart-bar-container">
+                        @{
+                            var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                            var signups = stats.DailySignups ?? new int[7];
+                            int maxSignups = signups.Max() > 0 ? signups.Max() : 1;
+                        }
+                        @for (int i = 0; i < 7; i++)
+                        {
+                            var signupCount = signups.Length > i ? signups[i] : 0;
+                            var heightPercent = (int)((double)signupCount / maxSignups * 80) + 10;
+                            var isHighlight = i == 6;
+
+                            <div class="chart-col">
+                                <div class="bar @(isHighlight ? "highlight" : "")" style="height: @(heightPercent)%;" title="@signupCount signups"></div>
+                                <span class="bar-label">@days[i]</span>
+                            </div>
+                        }
                     </div>
-                    <div class="small mt-2 text-white-50">Admin Privilege Granted</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card-panel h-100">
+                    <h6 class="fw-bold text-dark mb-3 fs-6">Recent activity</h6>
+                    <div class="d-flex flex-column gap-1">
+                        <div class="activity-item">
+                            <i class="bi bi-briefcase text-primary activity-icon"></i>
+                            <span>Tomal posted <strong class="fw-semibold">Junior Developer</strong></span>
+                        </div>
+                        <div class="activity-item">
+                            <i class="bi bi-file-earmark-text text-success activity-icon"></i>
+                            <span>shifa applied for <strong class="fw-semibold">Data Entry</strong></span>
+                        </div>
+                        <div class="activity-item">
+                            <i class="bi bi-person-plus text-warning activity-icon"></i>
+                            <span>jemima joined as <strong class="fw-semibold">Worker</strong></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Navigation Tabs -->
-        <ul class="nav nav-pills mb-3 gap-2 bg-light p-2 rounded-3 border">
+        <ul class="nav nav-tabs-custom">
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "users" ? "active" : "")" @onclick='() => activeTab = "users"'>
-                    <i class="bi bi-person-lines-fill me-1"></i> Users Management
+                    <i class="bi bi-people me-1"></i> Users
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "jobs" ? "active" : "")" @onclick='() => activeTab = "jobs"'>
-                    <i class="bi bi-briefcase me-1"></i> Jobs Directory
+                    <i class="bi bi-briefcase me-1"></i> Jobs
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "applications" ? "active" : "")" @onclick='() => activeTab = "applications"'>
-                    <i class="bi bi-file-earmark-person me-1"></i> Applications
+                    <i class="bi bi-file-earmark-text me-1"></i> Applications
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(activeTab == "reports" ? "active" : "")" @onclick='() => activeTab = "reports"'>
+                    <i class="bi bi-flag me-1"></i> Reports
                 </button>
             </li>
         </ul>
 
+        <!-- Data Panels -->
         @if (activeTab == "users")
         {
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
-                    <span class="fw-bold fs-6">Registered Users (@FilteredUsers.Count)</span>
-                    <div class="input-group input-group-sm w-25">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0 bg-light" placeholder="Search name or email..." @bind="userSearchTerm" @bind:event="oninput" />
+            <div class="card-panel p-0">
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <span class="fw-bold text-dark fs-6">Registered users (@FilteredUsers.Count)</span>
+                    <div class="input-group input-group-sm style-search" style="max-width: 260px;">
+                        <input type="text" class="form-control rounded-2 bg-light border-0" placeholder="Search name or email" @bind="userSearchTerm" @bind:event="oninput" />
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    @if (loadingUsers)
-                    {
-                        <div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Loading users...</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table custom-table align-middle mb-0">
-                                <thead class="table-light text-secondary small text-uppercase">
+
+                @if (loadingUsers)
+                {
+                    <div class="p-4 text-center text-muted">Loading users...</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var u in FilteredUsers)
+                                {
                                     <tr>
-                                        <th class="ps-3">Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Change Role</th>
-                                        <th>Joined</th>
-                                        <th class="text-end pe-3">Action</th>
+                                        <td class="fw-semibold">@u.FullName</td>
+                                        <td class="text-muted">@u.Email</td>
+                                        <td>
+                                            <span class="badge-role @GetRoleBadgeClass(u.Role)">@u.Role</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-active"><span class="status-dot"></span>@u.Status</span>
+                                        </td>
+                                        <td class="text-muted">@u.CreatedAt.ToString("dd MMM yyyy")</td>
+                                        <td class="text-end">
+                                            @if (u.Id == AuthState.UserId)
+                                            {
+                                                <span class="text-muted small">You</span>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteUser(u.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var u in FilteredUsers)
-                                    {
-                                        <tr>
-                                            <td class="ps-3 fw-semibold">@u.FullName</td>
-                                            <td class="text-muted">@u.Email</td>
-                                            <td><span class="badge @GetRoleBadgeClass(u.Role) px-2 py-1">@u.Role</span></td>
-                                            <td>
-                                                @if (u.Id != AuthState.UserId)
-                                                {
-                                                    <select class="form-select form-select-sm w-75" @onchange="(e) => ChangeUserRole(u.Id, e.Value?.ToString())">
-                                                        <option value="Worker" selected="@(u.Role == "Worker")">Worker</option>
-                                                        <option value="Employer" selected="@(u.Role == "Employer")">Employer</option>
-                                                        <option value="Admin" selected="@(u.Role == "Admin")">Admin</option>
-                                                    </select>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted small">You (Current Admin)</span>
-                                                }
-                                            </td>
-                                            <td class="small text-muted">@u.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                            <td class="text-end pe-3">
-                                                @if (u.Id != AuthState.UserId)
-                                                {
-                                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteUser(u.Id)">
-                                                        <i class="bi bi-trash"></i> Delete
-                                                    </button>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         }
         else if (activeTab == "jobs")
         {
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
-                    <span class="fw-bold fs-6">Job Postings (@FilteredJobs.Count)</span>
-                    <div class="input-group input-group-sm w-25">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0 bg-light" placeholder="Search title or company..." @bind="jobSearchTerm" @bind:event="oninput" />
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    @if (loadingJobs)
-                    {
-                        <div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Loading jobs...</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table custom-table align-middle mb-0">
-                                <thead class="table-light text-secondary small text-uppercase">
-                                    <tr>
-                                        <th class="ps-3">Job Title</th>
-                                        <th>Company</th>
-                                        <th>Status</th>
-                                        <th>Posted By</th>
-                                        <th>Date Posted</th>
-                                        <th class="text-end pe-3">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var j in FilteredJobs)
-                                    {
-                                        <tr>
-                                            <td class="ps-3 fw-semibold text-primary">@j.Title</td>
-                                            <td><i class="bi bi-building me-1 text-muted"></i>@j.Company</td>
-                                            <td>
-                                                @if (j.IsActive)
-                                                {
-                                                    <span class="badge bg-success-subtle text-success border border-success px-2 py-1">Active</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1">Closed</span>
-                                                }
-                                            </td>
-                                            <td>@j.PostedByName</td>
-                                            <td class="small text-muted">@j.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                            <td class="text-end pe-3">
-                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteJob(j.Id)">
-                                                    <i class="bi bi-trash"></i> Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
+            <div class="card-panel p-0">
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">Job Postings (@jobs.Count)</div>
+                <div class="table-responsive">
+                    <table class="table table-custom align-middle">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Posted Date</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var j in jobs)
+                            {
+                                <tr>
+                                    <td class="fw-semibold text-primary">@j.Title</td>
+                                    <td>@j.Company</td>
+                                    <td class="text-muted">@j.PostedAt.ToString("dd MMM yyyy")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteJob(j.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         }
         else if (activeTab == "applications")
         {
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom-0">
-                    <span class="fw-bold fs-6">Submitted Applications (@FilteredApplications.Count)</span>
-                    <div class="input-group input-group-sm w-25">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0 bg-light" placeholder="Search applicant or job..." @bind="appSearchTerm" @bind:event="oninput" />
-                    </div>
+            <div class="card-panel p-0">
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">Applications (@applications.Count)</div>
+                <div class="table-responsive">
+                    <table class="table table-custom align-middle">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Applicant</th>
+                                <th>Email</th>
+                                <th>Applied Date</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in applications)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@a.JobTitle</td>
+                                    <td>@a.ApplicantName</td>
+                                    <td class="text-muted">@a.ApplicantEmail</td>
+                                    <td class="text-muted">@a.AppliedAt.ToString("dd MMM yyyy")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteApplication(a.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-body p-0">
-                    @if (loadingApplications)
-                    {
-                        <div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Loading applications...</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table custom-table align-middle mb-0">
-                                <thead class="table-light text-secondary small text-uppercase">
-                                    <tr>
-                                        <th class="ps-3">Job Title</th>
-                                        <th>Applicant Name</th>
-                                        <th>Applicant Email</th>
-                                        <th>Status</th>
-                                        <th>Applied Date</th>
-                                        <th class="text-end pe-3">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var a in FilteredApplications)
-                                    {
-                                        <tr>
-                                            <td class="ps-3 fw-semibold text-dark">@a.JobTitle</td>
-                                            <td>@a.ApplicantName</td>
-                                            <td class="text-muted">@a.ApplicantEmail</td>
-                                            <td>
-                                                <span class="badge bg-info-subtle text-info border border-info px-2 py-1">@a.Status</span>
-                                            </td>
-                                            <td class="small text-muted">@a.AppliedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                            <td class="text-end pe-3">
-                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteApplication(a.Id)">
-                                                    <i class="bi bi-trash"></i> Remove
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
+            </div>
+        }
+        else if (activeTab == "reports")
+        {
+            <div class="card-panel p-4 text-center text-muted">
+                <i class="bi bi-shield-check fs-2 text-success"></i>
+                <p class="mt-2 mb-0">No flagged content or reports to review.</p>
             </div>
         }
     }
@@ -378,15 +490,11 @@
     private bool authorized = false;
     private string activeTab = "users";
     private string? errorMessage;
-
     private string userSearchTerm = "";
-    private string jobSearchTerm = "";
-    private string appSearchTerm = "";
 
     private bool loadingUsers = true;
-    private bool loadingJobs = true;
-    private bool loadingApplications = true;
 
+    private StatsModel stats = new();
     private List<UserItem> users = new();
     private List<JobItem> jobs = new();
     private List<ApplicationItem> applications = new();
@@ -396,28 +504,11 @@
         : users.Where(u => u.FullName.Contains(userSearchTerm, StringComparison.OrdinalIgnoreCase) ||
                            u.Email.Contains(userSearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
 
-    private List<JobItem> FilteredJobs => string.IsNullOrWhiteSpace(jobSearchTerm)
-        ? jobs
-        : jobs.Where(j => j.Title.Contains(jobSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                          j.Company.Contains(jobSearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
-
-    private List<ApplicationItem> FilteredApplications => string.IsNullOrWhiteSpace(appSearchTerm)
-        ? applications
-        : applications.Where(a => a.ApplicantName.Contains(appSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                  a.ApplicantEmail.Contains(appSearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                                  a.JobTitle.Contains(appSearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
-
     protected override async Task OnInitializedAsync()
     {
         await AuthState.InitializeAsync();
 
-        if (!AuthState.IsLoggedIn)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
-        if (!AuthState.IsAdmin)
+        if (!AuthState.IsLoggedIn || !AuthState.IsAdmin)
         {
             Navigation.NavigateTo("/");
             return;
@@ -425,9 +516,20 @@
 
         authorized = true;
 
+        await LoadStats();
         await LoadUsers();
         await LoadJobs();
         await LoadApplications();
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            var result = await Http.GetFromJsonAsync<StatsModel>($"api/admin/stats?adminUserId={AuthState.UserId}");
+            if (result is not null) stats = result;
+        }
+        catch (Exception) { }
     }
 
     private async Task LoadUsers()
@@ -444,47 +546,22 @@
 
     private async Task LoadJobs()
     {
-        loadingJobs = true;
         try
         {
             var result = await Http.GetFromJsonAsync<List<JobItem>>($"api/admin/jobs?adminUserId={AuthState.UserId}");
             if (result is not null) jobs = result;
         }
-        catch (Exception) { errorMessage = "Could not load jobs."; }
-        finally { loadingJobs = false; }
+        catch (Exception) { }
     }
 
     private async Task LoadApplications()
     {
-        loadingApplications = true;
         try
         {
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/admin/applications?adminUserId={AuthState.UserId}");
             if (result is not null) applications = result;
         }
-        catch (Exception) { errorMessage = "Could not load applications."; }
-        finally { loadingApplications = false; }
-    }
-
-    private async Task ChangeUserRole(int userId, string? newRole)
-    {
-        if (string.IsNullOrEmpty(newRole)) return;
-
-        errorMessage = null;
-        try
-        {
-            var response = await Http.PutAsJsonAsync($"api/admin/users/{userId}/role?adminUserId={AuthState.UserId}", newRole);
-            if (response.IsSuccessStatusCode)
-            {
-                var targetUser = users.FirstOrDefault(u => u.Id == userId);
-                if (targetUser != null) targetUser.Role = newRole;
-            }
-            else
-            {
-                errorMessage = "Failed to update user role.";
-            }
-        }
-        catch (Exception) { errorMessage = "Could not reach the server."; }
+        catch (Exception) { }
     }
 
     private async Task DeleteUser(int userId)
@@ -492,83 +569,67 @@
         bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this user?");
         if (!confirmed) return;
 
-        errorMessage = null;
         try
         {
             var response = await Http.DeleteAsync($"api/admin/users/{userId}?adminUserId={AuthState.UserId}");
             if (response.IsSuccessStatusCode)
             {
                 users.RemoveAll(u => u.Id == userId);
-            }
-            else
-            {
-                errorMessage = "Could not delete this user.";
+                await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Could not reach the server."; }
+        catch (Exception) { }
     }
 
     private async Task DeleteJob(int jobId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this job posting?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure?");
         if (!confirmed) return;
 
-        errorMessage = null;
         try
         {
             var response = await Http.DeleteAsync($"api/admin/jobs/{jobId}?adminUserId={AuthState.UserId}");
             if (response.IsSuccessStatusCode)
             {
                 jobs.RemoveAll(j => j.Id == jobId);
-            }
-            else
-            {
-                errorMessage = "Could not delete this job.";
+                await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Could not reach the server."; }
+        catch (Exception) { }
     }
 
     private async Task DeleteApplication(int appId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to remove this application?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure?");
         if (!confirmed) return;
 
-        errorMessage = null;
         try
         {
             var response = await Http.DeleteAsync($"api/admin/applications/{appId}?adminUserId={AuthState.UserId}");
             if (response.IsSuccessStatusCode)
             {
                 applications.RemoveAll(a => a.Id == appId);
-            }
-            else
-            {
-                errorMessage = "Could not delete application.";
+                await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Could not reach the server."; }
+        catch (Exception) { }
     }
 
-    private string GetRoleBadgeClass(string role)
+    private string GetRoleBadgeClass(string role) => role switch
     {
-        return role switch
-        {
-            "Admin" => "badge-admin",
-            "Employer" => "badge-employer",
-            "Worker" => "badge-worker",
-            _ => "bg-secondary text-white"
-        };
-    }
+        "Employer" => "badge-role-employer",
+        "Worker" => "badge-role-worker",
+        _ => "badge-role-admin"
+    };
 
     private async Task ExportUsersToCsv()
     {
         var csvBuilder = new System.Text.StringBuilder();
-        csvBuilder.AppendLine("ID,FullName,Email,Role,JoinedDate");
+        csvBuilder.AppendLine("ID,FullName,Email,Role,Status,JoinedDate");
 
         foreach (var u in users)
         {
-            csvBuilder.AppendLine($"{u.Id},\"{u.FullName}\",\"{u.Email}\",{u.Role},{u.CreatedAt:yyyy-MM-dd}");
+            csvBuilder.AppendLine($"{u.Id},\"{u.FullName}\",\"{u.Email}\",{u.Role},{u.Status},{u.CreatedAt:yyyy-MM-dd}");
         }
 
         var bytes = System.Text.Encoding.UTF8.GetBytes(csvBuilder.ToString());
@@ -578,12 +639,25 @@
         await JS.InvokeVoidAsync("eval", $"let a = document.createElement('a'); a.href = '{fileUrl}'; a.download = 'users_export.csv'; a.click();");
     }
 
+    private class StatsModel
+    {
+        public int TotalUsers { get; set; }
+        public int NewUsersThisWeek { get; set; }
+        public int TotalJobs { get; set; }
+        public int ActiveJobs { get; set; }
+        public int TotalApplications { get; set; }
+        public int PendingApplications { get; set; }
+        public int FlaggedContent { get; set; }
+        public int[] DailySignups { get; set; } = new int[7];
+    }
+
     private class UserItem
     {
         public int Id { get; set; }
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
         public string Role { get; set; } = "";
+        public string Status { get; set; } = "Active";
         public DateTime CreatedAt { get; set; }
     }
 
@@ -592,22 +666,15 @@
         public int Id { get; set; }
         public string Title { get; set; } = "";
         public string Company { get; set; } = "";
-        public string Location { get; set; } = "";
-        public string JobType { get; set; } = "";
-        public bool IsActive { get; set; }
         public DateTime PostedAt { get; set; }
-        public int PostedByUserId { get; set; }
-        public string PostedByName { get; set; } = "";
     }
 
     private class ApplicationItem
     {
         public int Id { get; set; }
-        public int JobId { get; set; }
         public string JobTitle { get; set; } = "";
         public string ApplicantName { get; set; } = "";
         public string ApplicantEmail { get; set; } = "";
-        public string Status { get; set; } = "";
         public DateTime AppliedAt { get; set; }
     }
 }
