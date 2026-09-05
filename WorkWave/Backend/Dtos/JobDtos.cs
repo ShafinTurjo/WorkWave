@@ -26,7 +26,6 @@ public class JobCreateRequest
 
     public string[] Tags { get; set; } = Array.Empty<string>();
 
-    // Which user is posting this job (until real auth/JWT is added, sent explicitly).
     [Required]
     public int PostedByUserId { get; set; }
 }
@@ -43,4 +42,17 @@ public class JobResponse
     public string JobType { get; set; } = "";
     public string[] Tags { get; set; } = Array.Empty<string>();
     public DateTime PostedAt { get; set; }
+}
+
+public class EmployerDashboardStatsDto
+{
+    public int TotalJobs { get; set; }
+    public int TotalApplicants { get; set; }
+    public int ActiveJobs { get; set; }
+    public int ClosedJobs { get; set; }
+}
+
+public class UpdateJobStatusDto
+{
+    public string Status { get; set; } = string.Empty;
 }

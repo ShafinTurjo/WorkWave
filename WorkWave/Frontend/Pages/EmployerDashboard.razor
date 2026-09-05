@@ -5,7 +5,7 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     @if (!authorized)
     {
         <div class="alert alert-warning">Checking access...</div>
@@ -14,25 +14,55 @@
     {
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="fw-bold">Employer Dashboard</h3>
+                <h3 class="fw-bold mb-1">Employer Dashboard</h3>
                 <p class="text-muted mb-0">Welcome back, @AuthState.FullName</p>
             </div>
-            <a href="post-job" class="btn btn-primary">
+            <a href="post-job" class="btn btn-primary px-4 rounded-pill fw-semibold">
                 <i class="bi bi-plus-circle me-1"></i> Post a New Job
             </a>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="alert alert-danger py-2 small">@errorMessage</div>
+            <div class="alert alert-danger py-2 small mb-4">@errorMessage</div>
         }
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-bold">My Posted Jobs</div>
-            <div class="card-body">
+        <!-- Top Metrics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                    <span class="text-muted small fw-medium">Total Jobs</span>
+                    <h3 class="fw-bold text-primary mt-2 mb-0">@(stats?.TotalJobs ?? 0)</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                    <span class="text-muted small fw-medium">Total Applicants</span>
+                    <h3 class="fw-bold text-success mt-2 mb-0">@(stats?.TotalApplicants ?? 0)</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                    <span class="text-muted small fw-medium">Active Listings</span>
+                    <h3 class="fw-bold text-warning mt-2 mb-0">@(stats?.ActiveJobs ?? 0)</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                    <span class="text-muted small fw-medium">Closed Listings</span>
+                    <h3 class="fw-bold text-secondary mt-2 mb-0">@(stats?.ClosedJobs ?? 0)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white fw-bold py-3 border-0">My Posted Jobs</div>
+            <div class="card-body p-4">
                 @if (loading)
                 {
-                    <p class="text-muted">Loading...</p>
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
                 }
                 else if (jobs.Count == 0)
                 {
@@ -42,18 +72,18 @@
                 {
                     @foreach (var job in jobs)
                     {
-                        <div class="border rounded p-3 mb-3">
+                        <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="mb-1">@job.Title</h5>
+                                    <h5 class="fw-bold mb-1">@job.Title</h5>
                                     <p class="text-muted small mb-1">@job.Company · @job.Location · @job.JobType</p>
                                     <p class="text-muted small mb-0">Posted @job.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</p>
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ToggleApplicants(job.Id)">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="() => ToggleApplicants(job.Id)">
                                         @(expandedJobId == job.Id ? "Hide Applicants" : "View Applicants")
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteJob(job.Id)">
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" @onclick="() => DeleteJob(job.Id)">
                                         Delete
                                     </button>
                                 </div>
@@ -72,9 +102,9 @@
                                 }
                                 else
                                 {
-                                    <table class="table table-sm mb-0 align-middle">
+                                    <table class="table table-sm mb-0 align-middle mt-2">
                                         <thead>
-                                            <tr><th>Name</th><th>Email</th><th>Applied</th><th>Resume</th><th>Status</th><th></th></tr>
+                                            <tr><th>Name</th><th>Email</th><th>Applied</th><th>Resume</th><th>Status</th><th>Action</th></tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var a in applicants)
@@ -86,7 +116,7 @@
                                                     <td>
                                                         @if (!string.IsNullOrEmpty(a.ResumeUrl))
                                                         {
-                                                            <a class="btn btn-sm btn-outline-primary" href="@a.ResumeUrl" target="_blank" rel="noopener">
+                                                            <a class="btn btn-sm btn-outline-primary rounded-pill px-2" href="@a.ResumeUrl" target="_blank" rel="noopener">
                                                                 <i class="bi bi-file-earmark-pdf-fill me-1"></i>View CV
                                                             </a>
                                                         }
@@ -101,12 +131,12 @@
                                                     <td>
                                                         @if (a.Status == "Pending")
                                                         {
-                                                            <button class="btn btn-sm btn-outline-success me-1" @onclick="() => UpdateStatus(a, StatusAccepted)">Accept</button>
-                                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => UpdateStatus(a, StatusRejected)">Reject</button>
+                                                            <button class="btn btn-sm btn-outline-success me-1 rounded-pill" @onclick="() => UpdateStatus(a, StatusAccepted)">Accept</button>
+                                                            <button class="btn btn-sm btn-outline-danger rounded-pill" @onclick="() => UpdateStatus(a, StatusRejected)">Reject</button>
                                                         }
                                                         else
                                                         {
-                                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => UpdateStatus(a, StatusPending)">Reset</button>
+                                                            <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="() => UpdateStatus(a, StatusPending)">Reset</button>
                                                         }
                                                     </td>
                                                 </tr>
@@ -129,6 +159,8 @@
     private bool loadingApplicants = false;
     private string? errorMessage;
     private int? expandedJobId;
+    
+    private EmployerDashboardStatsDto? stats;
     private List<JobItem> jobs = new();
     private List<ApplicationItem> applicants = new();
 
@@ -149,7 +181,20 @@
         }
 
         authorized = true;
+        await LoadStats();
         await LoadJobs();
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            stats = await Http.GetFromJsonAsync<EmployerDashboardStatsDto>($"api/employer/stats/{AuthState.UserId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Stats loading error: {ex.Message}");
+        }
     }
 
     private async Task LoadJobs()
@@ -189,7 +234,7 @@
         }
         catch (Exception)
         {
-            // Leave the list empty if the request fails.
+            // Leave empty
         }
         finally
         {
@@ -207,6 +252,7 @@
             {
                 jobs.RemoveAll(j => j.Id == jobId);
                 if (expandedJobId == jobId) expandedJobId = null;
+                await LoadStats();
             }
             else
             {
@@ -260,10 +306,18 @@
 
     private static string StatusBadgeClass(string status) => status switch
     {
-        "Accepted" => "bg-success-subtle text-success border border-success-subtle",
-        "Rejected" => "bg-danger-subtle text-danger border border-danger-subtle",
-        _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+        "Accepted" => "bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill",
+        "Rejected" => "bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill",
+        _ => "bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill"
     };
+
+    public class EmployerDashboardStatsDto
+    {
+        public int TotalJobs { get; set; }
+        public int TotalApplicants { get; set; }
+        public int ActiveJobs { get; set; }
+        public int ClosedJobs { get; set; }
+    }
 
     private class ApplicationItem
     {
