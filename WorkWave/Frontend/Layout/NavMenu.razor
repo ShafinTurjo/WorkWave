@@ -1,6 +1,7 @@
 ﻿@using Frontend.Services
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
+@inject LocalizationService Loc
 @implements IDisposable
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
@@ -18,13 +19,13 @@
                 <li class="nav-item px-2">
                     <a class="nav-link text-light d-inline-flex align-items-center" href="">
                         <i class="bi bi-house-door me-2"></i>
-                        <span>Home</span>
+                        <span>@Loc.T("nav_home")</span>
                     </a>
                 </li>
                 <li class="nav-item px-2">
                     <a class="nav-link text-light d-inline-flex align-items-center" href="browse-jobs">
                         <i class="bi bi-briefcase me-2"></i>
-                        <span>Browse Jobs</span>
+                        <span>@Loc.T("nav_jobs")</span>
                     </a>
                 </li>
                 @if (AuthState.CanAccess("Employer"))
@@ -32,7 +33,7 @@
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="employer">
                             <i class="bi bi-building me-2"></i>
-                            <span>Employer Dashboard</span>
+                            <span>@Loc.T("nav_employer_dashboard")</span>
                         </a>
                     </li>
                 }
@@ -41,7 +42,7 @@
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="worker">
                             <i class="bi bi-speedometer2 me-2"></i>
-                            <span>Worker Dashboard</span>
+                            <span>@Loc.T("nav_worker_dashboard")</span>
                         </a>
                     </li>
                 }
@@ -50,25 +51,33 @@
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="admin">
                             <i class="bi bi-shield-lock me-2"></i>
-                            <span>Admin Panel</span>
+                            <span>@Loc.T("nav_admin")</span>
                         </a>
                     </li>
                 }
             </ul>
 
             <div class="d-flex align-items-center gap-2">
+                <!-- ভাষা পরিবর্তনের আপডেট করা বাটন -->
+                <button class="btn btn-outline-light px-3 py-1 text-nowrap d-inline-flex align-items-center justify-content-center" 
+                        style="min-width: 65px; height: 38px; font-size: 0.9rem;" 
+                        @onclick="ToggleLang">
+                    <i class="bi bi-globe me-1"></i>
+                    <span>@(Loc.CurrentLang == "en" ? "বাংলা" : "EN")</span>
+                </button>
+
                 @if (AuthState.IsLoggedIn)
                 {
                     <span class="text-light d-inline-flex align-items-center me-2">
                         <i class="bi bi-person-circle me-2"></i>
                         @AuthState.FullName
                     </span>
-                    <button class="btn btn-outline-light px-3" @onclick="HandleLogout">Logout</button>
+                    <button class="btn btn-outline-light px-3" @onclick="HandleLogout">@Loc.T("nav_logout")</button>
                 }
                 else
                 {
-                    <a class="btn btn-outline-light px-3" href="login">Login</a>
-                    <a class="btn btn-primary px-3" href="register">Register</a>
+                    <a class="btn btn-outline-light px-3" href="login">@Loc.T("nav_login")</a>
+                    <a class="btn btn-primary px-3" href="register">@Loc.T("nav_register")</a>
                 }
             </div>
         </div>
@@ -83,11 +92,19 @@
     {
         await AuthState.InitializeAsync();
         AuthState.OnChange += StateHasChanged;
+
+        await Loc.InitializeAsync();
+        Loc.OnChange += StateHasChanged;
     }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task ToggleLang()
+    {
+        await Loc.SetLanguageAsync(Loc.CurrentLang == "en" ? "bn" : "en");
     }
 
     private async Task HandleLogout()
@@ -99,5 +116,6 @@
     public void Dispose()
     {
         AuthState.OnChange -= StateHasChanged;
+        Loc.OnChange -= StateHasChanged;
     }
 }

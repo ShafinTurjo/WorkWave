@@ -10,4 +10,5 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7186/") });
 builder.Services.AddScoped<Frontend.Services.ThemeService>();
 builder.Services.AddScoped<Frontend.Services.AuthStateService>();
+builder.Services.AddScoped<Frontend.Services.LocalizationService>();
 await builder.Build().RunAsync();
