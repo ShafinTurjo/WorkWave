@@ -29,7 +29,6 @@ public class JobsController : ControllerBase
     }
 
     // GET api/jobs/5
-    // GET api/jobs/5
     [HttpGet("{id:int}")]
     public async Task<ActionResult<JobResponse>> GetById(int id)
     {
@@ -49,6 +48,25 @@ public class JobsController : ControllerBase
             .ToListAsync();
 
         return Ok(jobs.Select(ToResponse).ToList());
+    }
+
+    // PUT api/jobs/5/status (Job status active/closed update করার জন্য)
+    [HttpPut("{id:int}/status")]
+    public async Task<IActionResult> UpdateJobStatus(int id, [FromBody] UpdateJobStatusRequest request)
+    {
+        var job = await _db.Jobs.FindAsync(id);
+        if (job is null) return NotFound(new { message = $"Job {id} not found." });
+
+        var requester = await _db.Users.FindAsync(request.RequestingUserId);
+        var isOwner = job.PostedByUserId == request.RequestingUserId;
+        var isAdmin = requester is not null && requester.Role == "Admin";
+
+        if (!isOwner && !isAdmin) return Forbid();
+
+        job.IsActive = request.IsActive;
+        await _db.SaveChangesAsync();
+
+        return NoContent();
     }
 
     // DELETE api/jobs/5?requestingUserId=3  (only the poster, or an Admin, may delete)
@@ -88,7 +106,8 @@ public class JobsController : ControllerBase
             Description = request.Description,
             JobType = request.JobType,
             TagsCsv = string.Join(",", request.Tags),
-            PostedByUserId = request.PostedByUserId
+            PostedByUserId = request.PostedByUserId,
+            IsActive = true
         };
 
         _db.Jobs.Add(job);
@@ -107,9 +126,17 @@ public class JobsController : ControllerBase
         Salary = job.Salary,
         Description = job.Description,
         JobType = job.JobType,
+        IsActive = job.IsActive,
         Tags = string.IsNullOrWhiteSpace(job.TagsCsv)
             ? Array.Empty<string>()
             : job.TagsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries),
         PostedAt = job.PostedAt
     };
+}
+
+// Request DTO for Updating Status
+public class UpdateJobStatusRequest
+{
+    public int RequestingUserId { get; set; }
+    public bool IsActive { get; set; }
 }

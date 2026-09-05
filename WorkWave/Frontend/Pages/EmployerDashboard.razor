@@ -75,7 +75,12 @@
                         <div class="border rounded-4 p-3 mb-3 bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 class="fw-bold mb-1">@job.Title</h5>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h5 class="fw-bold mb-0">@job.Title</h5>
+                                        <span class="badge @(job.IsActive ? "bg-success-subtle text-success border border-success-subtle" : "bg-secondary-subtle text-secondary border border-secondary-subtle") rounded-pill">
+                                            @(job.IsActive ? "Active" : "Closed")
+                                        </span>
+                                    </div>
                                     <p class="text-muted small mb-1">@job.Company · @job.Location · @job.JobType</p>
                                     <p class="text-muted small mb-0">Posted @job.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</p>
                                 </div>
@@ -83,6 +88,12 @@
                                     <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="() => ToggleApplicants(job.Id)">
                                         @(expandedJobId == job.Id ? "Hide Applicants" : "View Applicants")
                                     </button>
+                                    
+                                    <!-- Toggle Job Status (Close / Reopen) Button -->
+                                    <button class="btn btn-sm @(job.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-3" @onclick="() => ToggleJobStatus(job)">
+                                        @(job.IsActive ? "Close Job" : "Reopen Job")
+                                    </button>
+
                                     <button class="btn btn-sm btn-outline-danger rounded-pill px-3" @onclick="() => DeleteJob(job.Id)">
                                         Delete
                                     </button>
@@ -242,6 +253,35 @@
         }
     }
 
+    private async Task ToggleJobStatus(JobItem job)
+    {
+        errorMessage = null;
+        try
+        {
+            var newActiveStatus = !job.IsActive;
+
+            var response = await Http.PutAsJsonAsync($"api/jobs/{job.Id}/status", new
+            {
+                requestingUserId = AuthState.UserId,
+                isActive = newActiveStatus
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                job.IsActive = newActiveStatus;
+                await LoadStats();
+            }
+            else
+            {
+                errorMessage = "Could not update job status.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Could not reach the server. Please try again.";
+        }
+    }
+
     private async Task DeleteJob(int jobId)
     {
         errorMessage = null;
@@ -272,6 +312,7 @@
         public string Company { get; set; } = "";
         public string Location { get; set; } = "";
         public string JobType { get; set; } = "";
+        public bool IsActive { get; set; } = true;
         public DateTime PostedAt { get; set; }
     }
 

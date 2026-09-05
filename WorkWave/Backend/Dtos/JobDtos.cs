@@ -40,6 +40,7 @@ public class JobResponse
     public string Salary { get; set; } = "";
     public string Description { get; set; } = "";
     public string JobType { get; set; } = "";
+    public bool IsActive { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
     public DateTime PostedAt { get; set; }
 }
@@ -52,7 +53,8 @@ public class EmployerDashboardStatsDto
     public int ClosedJobs { get; set; }
 }
 
-public class UpdateJobStatusDto
+public class UpdateJobStatusRequest
 {
-    public string Status { get; set; } = string.Empty;
+    public int RequestingUserId { get; set; }
+    public bool IsActive { get; set; } // string Status এর জায়গায় bool IsActive হবে
 }

@@ -26,6 +26,9 @@ public class Job
     [MaxLength(50)]
     public string JobType { get; set; } = "";
 
+    // Job Status: Active (true) or Closed (false)
+    public bool IsActive { get; set; } = true; 
+
     // Stored as a comma-separated string; exposed as string[] via the API DTO.
     public string TagsCsv { get; set; } = "";
 

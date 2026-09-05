@@ -19,13 +19,13 @@ public class EmployerController : ControllerBase
     [HttpGet("stats/{userId}")]
     public async Task<ActionResult<EmployerDashboardStatsDto>> GetEmployerStats(int userId)
     {
-       
         var employerJobs = _context.Jobs.Where(j => j.PostedByUserId == userId);
 
         var totalJobs = await employerJobs.CountAsync();
 
-        var activeJobs = await employerJobs.CountAsync();
-        var closedJobs = 0;
+        // IsActive ফিল্টার প্রয়োগ করা হয়েছে
+        var activeJobs = await employerJobs.CountAsync(j => j.IsActive);
+        var closedJobs = await employerJobs.CountAsync(j => !j.IsActive);
 
         var totalApplicants = await _context.JobApplications
             .Where(a => employerJobs.Select(j => j.Id).Contains(a.JobId))
