@@ -17,11 +17,12 @@ public class JobsController : ControllerBase
         _db = db;
     }
 
-    // GET api/jobs
+    // GET api/jobs (শুধুমাত্র Active চাকরিগুলো দেখাবে)
     [HttpGet]
     public async Task<ActionResult<List<JobResponse>>> GetAll()
     {
         var jobs = await _db.Jobs
+            .Where(j => j.IsActive)
             .OrderByDescending(j => j.PostedAt)
             .ToListAsync();
 
@@ -38,7 +39,7 @@ public class JobsController : ControllerBase
         return Ok(ToResponse(job));
     }
 
-    // GET api/jobs/mine/5  (jobs posted by a specific employer)
+    // GET api/jobs/mine/5 (একক নিয়োগকর্তার সব Active ও Closed চাকরিগুলো দেখাবে)
     [HttpGet("mine/{userId:int}")]
     public async Task<ActionResult<List<JobResponse>>> GetMine(int userId)
     {
@@ -50,7 +51,7 @@ public class JobsController : ControllerBase
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // PUT api/jobs/5/status (Job status active/closed update করার জন্য)
+    // PUT api/jobs/5/status (স্ট্যাটাস Active/Closed করার জন্য)
     [HttpPut("{id:int}/status")]
     public async Task<IActionResult> UpdateJobStatus(int id, [FromBody] UpdateJobStatusRequest request)
     {
@@ -69,7 +70,7 @@ public class JobsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/jobs/5?requestingUserId=3  (only the poster, or an Admin, may delete)
+    // DELETE api/jobs/5?requestingUserId=3
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, [FromQuery] int requestingUserId)
     {
@@ -132,11 +133,4 @@ public class JobsController : ControllerBase
             : job.TagsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries),
         PostedAt = job.PostedAt
     };
-}
-
-// Request DTO for Updating Status
-public class UpdateJobStatusRequest
-{
-    public int RequestingUserId { get; set; }
-    public bool IsActive { get; set; }
 }
