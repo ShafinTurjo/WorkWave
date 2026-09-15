@@ -1,4 +1,5 @@
 using Backend.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,7 +7,8 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AdminController : ControllerBase
+[Authorize(Roles = "Admin")]
+public class AdminController : ApiControllerBase
 {
     private readonly ApplicationDbContext _db;
 
@@ -15,16 +17,9 @@ public class AdminController : ControllerBase
         _db = db;
     }
 
-    private async Task<bool> IsAdminAsync(int adminUserId)
-    {
-        return await _db.Users.AnyAsync(u => u.Id == adminUserId && u.Role == "Admin");
-    }
-
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats([FromQuery] int adminUserId)
+    public async Task<IActionResult> GetStats()
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
         // গত ৭ দিনের প্রতিদিনের সাইনআপ সংখ্যা
@@ -35,7 +30,7 @@ public class AdminController : ControllerBase
             dailySignups[i] = await _db.Users.CountAsync(u => u.CreatedAt.Date == day);
         }
 
-        // ডায়নামিক রিসেন্ট অ্যাক্টিভিটি ডাটা তৈরি
+        // ডায়নামিক রিসেন্ট অ্যাক্টিভিটি ডাটা তৈরি
         var recentActivityList = new List<object>();
 
         var latestJob = await _db.Jobs
@@ -100,10 +95,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("users")]
-    public async Task<IActionResult> GetUsers([FromQuery] int adminUserId)
+    public async Task<IActionResult> GetUsers()
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var users = await _db.Users
             .OrderBy(u => u.Id)
             .Select(u => new
@@ -121,10 +114,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("users/{id:int}/role")]
-    public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole, [FromQuery] int adminUserId)
+    public async Task<IActionResult> UpdateUserRole(int id, [FromBody] string newRole)
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-        if (id == adminUserId) return BadRequest(new { message = "You cannot change your own admin role." });
+        if (id == CurrentUserId) return BadRequest(new { message = "You cannot change your own admin role." });
 
         var user = await _db.Users.FindAsync(id);
         if (user is null) return NotFound(new { message = $"User {id} not found." });
@@ -136,10 +128,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("users/{id:int}")]
-    public async Task<IActionResult> DeleteUser(int id, [FromQuery] int adminUserId)
+    public async Task<IActionResult> DeleteUser(int id)
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-        if (id == adminUserId) return BadRequest(new { message = "You cannot delete your own admin account." });
+        if (id == CurrentUserId) return BadRequest(new { message = "You cannot delete your own admin account." });
 
         var user = await _db.Users.FindAsync(id);
         if (user is null) return NotFound(new { message = $"User {id} not found." });
@@ -150,10 +141,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("jobs")]
-    public async Task<IActionResult> GetJobs([FromQuery] int adminUserId)
+    public async Task<IActionResult> GetJobs()
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var jobs = await _db.Jobs
             .OrderByDescending(j => j.PostedAt)
             .Select(j => new
@@ -174,10 +163,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("jobs/{id:int}")]
-    public async Task<IActionResult> DeleteJob(int id, [FromQuery] int adminUserId)
+    public async Task<IActionResult> DeleteJob(int id)
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var job = await _db.Jobs.FindAsync(id);
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
 
@@ -187,10 +174,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpGet("applications")]
-    public async Task<IActionResult> GetApplications([FromQuery] int adminUserId)
+    public async Task<IActionResult> GetApplications()
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var applications = await _db.JobApplications
             .OrderByDescending(a => a.AppliedAt)
             .Select(a => new
@@ -209,10 +194,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("applications/{id:int}")]
-    public async Task<IActionResult> DeleteApplication(int id, [FromQuery] int adminUserId)
+    public async Task<IActionResult> DeleteApplication(int id)
     {
-        if (!await IsAdminAsync(adminUserId)) return Forbid();
-
         var app = await _db.JobApplications.FindAsync(id);
         if (app is null) return NotFound(new { message = $"Application {id} not found." });
 

@@ -1,59 +1,105 @@
+using System.Text;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Backend.Options;
 using Backend.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
-// EF Core + SQL Server (running via Docker locally).
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Controllers (traditional [ApiController] style).
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddControllers();
 
 builder.Services.Configure<EmailOptions>(
     builder.Configuration.GetSection("Email"));
 
+builder.Services.Configure<JwtOptions>(
+    builder.Configuration.GetSection("Jwt"));
+
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-// CORS: allow the Blazor WASM Frontend (its dev-server origins) to call this API.
+builder.Services.AddSingleton<ITokenService, TokenService>();
+
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+if (string.IsNullOrWhiteSpace(jwtOptions.Key) || Encoding.UTF8.GetByteCount(jwtOptions.Key) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:Key is missing or shorter than 32 bytes. Set it with " +
+        "'dotnet user-secrets set \"Jwt:Key\" \"<a long random string>\"' locally, " +
+        "or the Jwt__Key environment variable in production.");
+}
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 const string FrontendCorsPolicy = "FrontendCorsPolicy";
+var devOrigins = new[] { "https://localhost:7174", "http://localhost:5189" };
+var configuredOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var allowedOrigins = devOrigins.Concat(configuredOrigins).Distinct().ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        policy.WithOrigins(
-                "https://localhost:7174",
-                "http://localhost:5189")
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
-        // If cookies/auth headers with credentials are needed later, also add:
-        // .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// Ensure the resume-uploads folder exists (wwwroot may not be created by default).
-Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resumes"));
+if (allowedOrigins.Length == devOrigins.Length && !app.Environment.IsDevelopment())
+{
+    app.Logger.LogWarning(
+        "No production origins configured in 'AllowedOrigins' — only localhost is allowed by CORS. " +
+        "The deployed frontend will be blocked from calling this API until you add its URL.");
+}
 
-// Configure the HTTP request pipeline.
+var applyMigrationsOnStartup = builder.Configuration.GetValue("ApplyMigrationsOnStartup", true);
+if (applyMigrationsOnStartup)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+else
+{
+    app.Logger.LogInformation("ApplyMigrationsOnStartup is false — skipping automatic migration.");
+}
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resumes"));
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-
-// Serve uploaded resumes (and any other static assets) from wwwroot.
 app.UseStaticFiles();
-
-// Must come before endpoint mapping, after routing.
 app.UseCors(FrontendCorsPolicy);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

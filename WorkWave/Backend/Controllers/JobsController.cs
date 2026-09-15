@@ -1,6 +1,7 @@
 using Backend.Data;
 using Backend.Dtos;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,7 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class JobsController : ControllerBase
+public class JobsController : ApiControllerBase
 {
     private readonly ApplicationDbContext _db;
 
@@ -17,8 +18,9 @@ public class JobsController : ControllerBase
         _db = db;
     }
 
-    // GET api/jobs (শুধুমাত্র Active চাকরিগুলো দেখাবে)
+    // GET api/jobs (শুধুমাত্র Active চাকরিগুলো দেখাবে) — publicly browsable, no auth needed
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<List<JobResponse>>> GetAll()
     {
         var jobs = await _db.Jobs
@@ -29,8 +31,9 @@ public class JobsController : ControllerBase
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // GET api/jobs/5
+    // GET api/jobs/5 — publicly viewable
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<ActionResult<JobResponse>> GetById(int id)
     {
         var job = await _db.Jobs.FindAsync(id);
@@ -39,10 +42,14 @@ public class JobsController : ControllerBase
         return Ok(ToResponse(job));
     }
 
-    // GET api/jobs/mine/5 (একক নিয়োগকর্তার সব Active ও Closed চাকরিগুলো দেখাবে)
+    // GET api/jobs/mine/5 (একক নিয়োগকর্তার সব Active ও Closed চাকরিগুলো দেখাবে)
     [HttpGet("mine/{userId:int}")]
+    [Authorize]
     public async Task<ActionResult<List<JobResponse>>> GetMine(int userId)
     {
+        var denied = EnsureSelfOrAdmin(userId);
+        if (denied is not null) return denied;
+
         var jobs = await _db.Jobs
             .Where(j => j.PostedByUserId == userId)
             .OrderByDescending(j => j.PostedAt)
@@ -53,16 +60,14 @@ public class JobsController : ControllerBase
 
     // PUT api/jobs/5/status (স্ট্যাটাস Active/Closed করার জন্য)
     [HttpPut("{id:int}/status")]
+    [Authorize]
     public async Task<IActionResult> UpdateJobStatus(int id, [FromBody] UpdateJobStatusRequest request)
     {
         var job = await _db.Jobs.FindAsync(id);
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
 
-        var requester = await _db.Users.FindAsync(request.RequestingUserId);
-        var isOwner = job.PostedByUserId == request.RequestingUserId;
-        var isAdmin = requester is not null && requester.Role == "Admin";
-
-        if (!isOwner && !isAdmin) return Forbid();
+        var isOwner = job.PostedByUserId == CurrentUserId;
+        if (!isOwner && !IsAdmin) return Forbid();
 
         job.IsActive = request.IsActive;
         await _db.SaveChangesAsync();
@@ -70,17 +75,16 @@ public class JobsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE api/jobs/5?requestingUserId=3
+    // DELETE api/jobs/5
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, [FromQuery] int requestingUserId)
+    [Authorize]
+    public async Task<IActionResult> Delete(int id)
     {
         var job = await _db.Jobs.FindAsync(id);
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
 
-        var requester = await _db.Users.FindAsync(requestingUserId);
-        var isOwner = job.PostedByUserId == requestingUserId;
-        var isAdmin = requester is not null && requester.Role == "Admin";
-        if (!isOwner && !isAdmin) return Forbid();
+        var isOwner = job.PostedByUserId == CurrentUserId;
+        if (!isOwner && !IsAdmin) return Forbid();
 
         _db.Jobs.Remove(job);
         await _db.SaveChangesAsync();
@@ -89,14 +93,9 @@ public class JobsController : ControllerBase
 
     // POST api/jobs
     [HttpPost]
+    [Authorize(Roles = "Employer,Admin")]
     public async Task<ActionResult<JobResponse>> Create(JobCreateRequest request)
     {
-        var posterExists = await _db.Users.AnyAsync(u => u.Id == request.PostedByUserId);
-        if (!posterExists)
-        {
-            return BadRequest(new { message = "PostedByUserId does not match an existing user." });
-        }
-
         var job = new Job
         {
             Title = request.Title,
@@ -107,7 +106,7 @@ public class JobsController : ControllerBase
             Description = request.Description,
             JobType = request.JobType,
             TagsCsv = string.Join(",", request.Tags),
-            PostedByUserId = request.PostedByUserId,
+            PostedByUserId = CurrentUserId, // always the authenticated user, never client-supplied
             IsActive = true
         };
 

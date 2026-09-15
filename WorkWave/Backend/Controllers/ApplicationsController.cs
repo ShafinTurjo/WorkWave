@@ -2,6 +2,7 @@ using Backend.Data;
 using Backend.Dtos;
 using Backend.Helpers;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,8 @@ namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ApplicationsController : ControllerBase
+[Authorize]
+public class ApplicationsController : ApiControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly IWebHostEnvironment _env;
@@ -35,14 +37,12 @@ public class ApplicationsController : ControllerBase
             return NotFound(new { message = $"Job {request.JobId} not found." });
         }
 
-        var applicantExists = await _db.Users.AnyAsync(u => u.Id == request.ApplicantUserId);
-        if (!applicantExists)
-        {
-            return BadRequest(new { message = "ApplicantUserId does not match an existing user." });
-        }
+        // The applicant is always the authenticated user — never trust a client-supplied id here,
+        // or anyone could submit applications (and resumes) on behalf of someone else.
+        var applicantUserId = CurrentUserId;
 
         var alreadyApplied = await _db.JobApplications
-            .AnyAsync(a => a.JobId == request.JobId && a.ApplicantUserId == request.ApplicantUserId);
+            .AnyAsync(a => a.JobId == request.JobId && a.ApplicantUserId == applicantUserId);
         if (alreadyApplied)
         {
             return Conflict(new { message = "You have already applied to this job." });
@@ -90,7 +90,7 @@ public class ApplicationsController : ControllerBase
         var application = new JobApplication
         {
             JobId = request.JobId,
-            ApplicantUserId = request.ApplicantUserId,
+            ApplicantUserId = applicantUserId,
             ApplicantName = request.ApplicantName,
             ApplicantEmail = request.ApplicantEmail,
             CoverLetter = request.CoverLetter,
@@ -102,7 +102,7 @@ public class ApplicationsController : ControllerBase
         await _db.SaveChangesAsync();
 
         var job = await _db.Jobs.FindAsync(application.JobId);
-        var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == request.ApplicantUserId);
+        var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == applicantUserId);
 
         
         string jobSkills = GetEffectiveJobSkills(job?.SkillsRequired, job?.TagsCsv);
@@ -116,6 +116,9 @@ public class ApplicationsController : ControllerBase
     [HttpGet("user/{userId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByUser(int userId)
     {
+        var denied = EnsureSelfOrAdmin(userId);
+        if (denied is not null) return denied;
+
         var userResume = await _db.Resumes.FirstOrDefaultAsync(r => r.UserId == userId);
 
         var applications = await _db.JobApplications
@@ -139,6 +142,11 @@ public class ApplicationsController : ControllerBase
     [HttpGet("job/{jobId:int}")]
     public async Task<ActionResult<List<ApplicationResponse>>> GetByJob(int jobId)
     {
+        // Only the employer who posted the job (or an admin) may see applicant details/resumes.
+        var job = await _db.Jobs.FindAsync(jobId);
+        if (job is null) return NotFound(new { message = $"Job {jobId} not found." });
+        if (job.PostedByUserId != CurrentUserId && !IsAdmin) return Forbid();
+
         var applications = await _db.JobApplications
             .Include(a => a.Job)
             .Where(a => a.JobId == jobId)
@@ -179,10 +187,8 @@ public class ApplicationsController : ControllerBase
             .FirstOrDefaultAsync(a => a.Id == id);
         if (application is null) return NotFound(new { message = $"Application {id} not found." });
 
-        var requester = await _db.Users.FindAsync(request.RequestingUserId);
-        var isJobOwner = application.Job is not null && application.Job.PostedByUserId == request.RequestingUserId;
-        var isAdmin = requester is not null && requester.Role == "Admin";
-        if (!isJobOwner && !isAdmin) return Forbid();
+        var isJobOwner = application.Job is not null && application.Job.PostedByUserId == CurrentUserId;
+        if (!isJobOwner && !IsAdmin) return Forbid();
 
         application.Status = request.Status;
         await _db.SaveChangesAsync();

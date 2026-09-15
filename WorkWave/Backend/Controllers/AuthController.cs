@@ -15,14 +15,16 @@ public class AuthController : ControllerBase
     private readonly ApplicationDbContext _db;
     private readonly IEmailService _emailService;
     private readonly IConfiguration _config;
+    private readonly ITokenService _tokenService;
 
     private static readonly TimeSpan VerificationTokenLifetime = TimeSpan.FromHours(24);
 
-    public AuthController(ApplicationDbContext db, IEmailService emailService, IConfiguration config)
+    public AuthController(ApplicationDbContext db, IEmailService emailService, IConfiguration config, ITokenService tokenService)
     {
         _db = db;
         _emailService = emailService;
         _config = config;
+        _tokenService = tokenService;
     }
 
     // POST api/auth/register
@@ -80,12 +82,15 @@ public class AuthController : ControllerBase
             });
         }
 
+        var token = _tokenService.CreateToken(user);
+
         return Ok(new AuthResponse
         {
             UserId = user.Id,
             FullName = user.FullName,
             Email = user.Email,
-            Role = user.Role
+            Role = user.Role,
+            Token = token
         });
     }
 
