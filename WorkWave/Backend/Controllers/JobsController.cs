@@ -19,7 +19,7 @@ public class JobsController : ApiControllerBase
         _db = db;
     }
 
-    // GET api/jobs (শুধুমাত্র Active এবং Flagged না হওয়া চাকরিগুলো সাধারণ ইউজারদের দেখাবে)
+    // GET api/jobs (শুধুমাত্র Active এবং Flagged না হওয়া চাকরিগুলো সাধারণ ইউজারদের দেখাবে)
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<List<JobResponse>>> GetAll()
@@ -32,7 +32,7 @@ public class JobsController : ApiControllerBase
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // GET api/jobs/flagged (শুধুমাত্র Admin ফ্ল্যাগ হওয়া বা ফ্ল্যাগড জবেগুলো রিভিউয়ের জন্য দেখতে পাবে)
+    // GET api/jobs/flagged (শুধুমাত্র Admin ফ্ল্যাগ হওয়া বা ফ্ল্যাগড জবেগুলো রিভিউয়ের জন্য দেখতে পাবে)
     [HttpGet("flagged")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<List<JobResponse>>> GetFlaggedJobs()
@@ -89,10 +89,10 @@ public class JobsController : ApiControllerBase
         return NoContent();
     }
 
-    // PUT api/jobs/5/review (Admin ফ্ল্যাগ করা জব Unflag/Approve বা Ban করতে পারবে)
+    // PUT api/jobs/5/review (Admin ফ্ল্যাগ করা জব Unflag/Approve বা Ban/Reject করতে পারবে)
     [HttpPut("{id:int}/review")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> ReviewJob(int id, [FromQuery] bool approve)
+    public async Task<IActionResult> ReviewJob(int id, [FromQuery] bool approve, [FromQuery] string? rejectionReason = null)
     {
         var job = await _db.Jobs.FindAsync(id);
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
@@ -102,16 +102,18 @@ public class JobsController : ApiControllerBase
             job.IsFlagged = false;
             job.Status = "Active";
             job.FlagReason = null;
+            job.RejectionReason = null;
         }
         else
         {
             job.IsFlagged = true;
-            job.Status = "Removed";
+            job.Status = "Rejected";
             job.IsActive = false;
+            job.RejectionReason = rejectionReason ?? "Rejected by admin review.";
         }
 
         await _db.SaveChangesAsync();
-        return Ok(new { message = approve ? "Job approved successfully." : "Job removed and marked as fraud." });
+        return Ok(new { message = approve ? "Job approved successfully." : "Job rejected and marked as removed." });
     }
 
     // POST api/jobs/5/report (Worker/User কোনো জব রিপোর্ট করার জন্য)
@@ -156,12 +158,12 @@ public class JobsController : ApiControllerBase
         return NoContent();
     }
 
-    // POST api/jobs (ডিটেকটর সার্ভিস দিয়ে ফ্রড ফিল্টারসহ জব পোস্ট তৈরি)
+    // POST api/jobs (ডিটেকটর সার্ভিস দিয়ে ফ্রড ফিল্টারসহ জব পোস্ট তৈরি)
     [HttpPost]
     [Authorize(Roles = "Employer,Admin")]
     public async Task<ActionResult<JobResponse>> Create(JobCreateRequest request)
     {
-        // FraudDetector সার্ভিস চালিয়ে টেক্সট চেক
+        // FraudDetector সার্ভিস চালিয়ে টেক্সট চেক
         var (isFraud, reason) = FraudDetector.EvaluateJob(request.Title, request.Description);
 
         var job = new Job
@@ -177,10 +179,10 @@ public class JobsController : ApiControllerBase
             PostedByUserId = CurrentUserId,
             IsActive = true,
 
-            
             IsFlagged = isFraud,
             FlagReason = isFraud ? reason : null,
-            Status = isFraud ? "Flagged" : "Active"
+            Status = isFraud ? "Flagged" : "Pending",
+            RejectionReason = null
         };
 
         _db.Jobs.Add(job);
@@ -203,6 +205,7 @@ public class JobsController : ApiControllerBase
         IsFlagged = job.IsFlagged,
         FlagReason = job.FlagReason,
         Status = job.Status,
+        RejectionReason = job.RejectionReason,
         Tags = string.IsNullOrWhiteSpace(job.TagsCsv)
             ? Array.Empty<string>()
             : job.TagsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries),

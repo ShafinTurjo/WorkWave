@@ -42,8 +42,8 @@ public class Job
 
     public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
 
-    
     public bool IsFlagged { get; set; } = false;
     public string? FlagReason { get; set; }
-    public string Status { get; set; } = "Active"; // Values: Active, Flagged, Removed
+    public string Status { get; set; } = "Pending"; // Values: Pending, Active, Rejected, Flagged, Removed
+    public string? RejectionReason { get; set; }
 }

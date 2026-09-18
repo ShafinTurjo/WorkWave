@@ -48,6 +48,7 @@ public class JobResponse
     public bool IsFlagged { get; set; }
     public string? FlagReason { get; set; }
     public string Status { get; set; } = "Active";
+    public string? RejectionReason { get; set; }
 }
 
 public class EmployerDashboardStatsDto

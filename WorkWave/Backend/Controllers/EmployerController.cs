@@ -28,9 +28,9 @@ public class EmployerController : ApiControllerBase
 
         var totalJobs = await employerJobs.CountAsync();
 
-        // IsActive ফিল্টার প্রয়োগ করা হয়েছে
-        var activeJobs = await employerJobs.CountAsync(j => j.IsActive);
-        var closedJobs = await employerJobs.CountAsync(j => !j.IsActive);
+        
+        var activeJobs = await employerJobs.CountAsync(j => j.IsActive && !j.IsFlagged);
+        var closedJobs = await employerJobs.CountAsync(j => !j.IsActive && !j.IsFlagged);
 
         var totalApplicants = await _context.JobApplications
             .Where(a => employerJobs.Select(j => j.Id).Contains(a.JobId))
