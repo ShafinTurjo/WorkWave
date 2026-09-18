@@ -43,6 +43,11 @@ public class JobResponse
     public bool IsActive { get; set; }
     public string[] Tags { get; set; } = Array.Empty<string>();
     public DateTime PostedAt { get; set; }
+
+    // --- Fraud Detection-এর জন্য নতুন ফিল্ডগুলো ---
+    public bool IsFlagged { get; set; }
+    public string? FlagReason { get; set; }
+    public string Status { get; set; } = "Active";
 }
 
 public class EmployerDashboardStatsDto
@@ -56,5 +61,5 @@ public class EmployerDashboardStatsDto
 public class UpdateJobStatusRequest
 {
     public int RequestingUserId { get; set; }
-    public bool IsActive { get; set; } // string Status এর জায়গায় bool IsActive হবে
+    public bool IsActive { get; set; }
 }
