@@ -87,9 +87,9 @@
         min-height: 8px;
     }
 
-    .bar.highlight {
-        background-color: #1d4ed8;
-    }
+        .bar.highlight {
+            background-color: #1d4ed8;
+        }
 
     .bar-label {
         font-size: 0.75rem;
@@ -114,41 +114,41 @@
         margin-bottom: 1.5rem;
     }
 
-    .nav-tabs-custom .nav-link {
-        border: none;
-        color: #6b7280;
-        font-weight: 500;
-        padding: 0.6rem 1rem;
-        margin-bottom: -1px;
-        background: transparent;
-    }
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #6b7280;
+            font-weight: 500;
+            padding: 0.6rem 1rem;
+            margin-bottom: -1px;
+            background: transparent;
+        }
 
-    .nav-tabs-custom .nav-link.active {
-        color: #2563eb;
-        border-bottom: 2px solid #2563eb;
-        background: transparent;
-    }
+            .nav-tabs-custom .nav-link.active {
+                color: #2563eb;
+                border-bottom: 2px solid #2563eb;
+                background: transparent;
+            }
 
     .table-custom {
         width: 100%;
         margin-bottom: 0;
     }
 
-    .table-custom th {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #6b7280;
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #f3f4f6;
-    }
+        .table-custom th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7280;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
 
-    .table-custom td {
-        padding: 0.85rem 1rem;
-        font-size: 0.875rem;
-        color: #1f2937;
-        border-bottom: 1px solid #f3f4f6;
-        vertical-align: middle;
-    }
+        .table-custom td {
+            padding: 0.85rem 1rem;
+            font-size: 0.875rem;
+            color: #1f2937;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: middle;
+        }
 
     .badge-role {
         padding: 0.25rem 0.6rem;
@@ -185,9 +185,9 @@
         font-weight: 500;
     }
 
-    .status-active .status-dot {
-        background-color: #16a34a;
-    }
+        .status-active .status-dot {
+            background-color: #16a34a;
+        }
 
     .btn-export {
         border: 1px solid #d1d5db;
@@ -205,6 +205,11 @@
         color: #6b7280;
         padding: 0.4rem 0.6rem;
         border-radius: 8px;
+    }
+
+    .bg-danger-subtle {
+        background-color: #ffebe9 !important;
+        color: #cf222e !important;
     }
 </style>
 
@@ -270,8 +275,8 @@
             <div class="col-md-3">
                 <div class="stat-box">
                     <div class="stat-title">Flagged content</div>
-                    <div class="stat-number">@stats.FlaggedContent</div>
-                    <div class="stat-sub text-muted">All clear</div>
+                    <div class="stat-number text-danger">@stats.FlaggedContent</div>
+                    <div class="stat-sub text-muted">@flaggedJobs.Count pending review</div>
                 </div>
             </div>
         </div>
@@ -343,7 +348,7 @@
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "reports" ? "active" : "")" @onclick='() => activeTab = "reports"'>
-                    <i class="bi bi-flag me-1"></i> Reports
+                    <i class="bi bi-flag me-1"></i> Reports (@flaggedJobs.Count)
                 </button>
             </li>
         </ul>
@@ -480,9 +485,62 @@
         }
         else if (activeTab == "reports")
         {
-            <div class="card-panel p-4 text-center text-muted">
-                <i class="bi bi-shield-check fs-2 text-success"></i>
-                <p class="mt-2 mb-0">No flagged content or reports to review.</p>
+            <div class="card-panel p-0">
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">Flagged Jobs & User Reports (@flaggedJobs.Count)</div>
+
+                @if (loadingFlaggedJobs)
+                {
+                    <div class="p-4 text-center text-muted">Loading reported jobs...</div>
+                }
+                else if (!flaggedJobs.Any())
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-shield-check fs-2 text-success"></i>
+                        <p class="mt-2 mb-0">No flagged content or reports to review.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Job Title</th>
+                                    <th>Company</th>
+                                    <th>Flag Reason</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var fj in flaggedJobs)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold text-dark">@fj.Title</td>
+                                        <td>@fj.Company</td>
+                                        <td>
+                                            <span class="badge bg-danger-subtle px-2 py-1 rounded-2">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                @(string.IsNullOrEmpty(fj.FlagReason) ? "Suspicious Activity" : fj.FlagReason)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">@fj.Status</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-success btn-sm rounded-2 me-1 fw-semibold" @onclick="() => ReviewJob(fj.Id, true)">
+                                                <i class="bi bi-check-lg me-1"></i> Approve
+                                            </button>
+                                            <button class="btn btn-danger btn-sm rounded-2 fw-semibold" @onclick="() => ReviewJob(fj.Id, false)">
+                                                <i class="bi bi-trash me-1"></i> Remove
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         }
     }
@@ -495,11 +553,13 @@
     private string userSearchTerm = "";
 
     private bool loadingUsers = true;
+    private bool loadingFlaggedJobs = false;
 
     private StatsModel stats = new();
     private List<UserItem> users = new();
     private List<JobItem> jobs = new();
     private List<ApplicationItem> applications = new();
+    private List<FlaggedJobItem> flaggedJobs = new();
 
     private List<UserItem> FilteredUsers => string.IsNullOrWhiteSpace(userSearchTerm)
         ? users
@@ -522,6 +582,7 @@
         await LoadUsers();
         await LoadJobs();
         await LoadApplications();
+        await LoadFlaggedJobs();
     }
 
     private async Task LoadStats()
@@ -562,6 +623,33 @@
         {
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/admin/applications?adminUserId={AuthState.UserId}");
             if (result is not null) applications = result;
+        }
+        catch (Exception) { }
+    }
+
+    private async Task LoadFlaggedJobs()
+    {
+        loadingFlaggedJobs = true;
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<FlaggedJobItem>>($"api/jobs/flagged?adminUserId={AuthState.UserId}");
+            if (result is not null) flaggedJobs = result;
+        }
+        catch (Exception) { }
+        finally { loadingFlaggedJobs = false; }
+    }
+
+    private async Task ReviewJob(int jobId, bool approve)
+    {
+        try
+        {
+            var response = await Http.PutAsync($"api/jobs/{jobId}/review?approve={approve}&adminUserId={AuthState.UserId}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                flaggedJobs.RemoveAll(j => j.Id == jobId);
+                await LoadStats();
+                await LoadJobs();
+            }
         }
         catch (Exception) { }
     }
@@ -686,5 +774,14 @@
         public string ApplicantName { get; set; } = "";
         public string ApplicantEmail { get; set; } = "";
         public DateTime AppliedAt { get; set; }
+    }
+
+    private class FlaggedJobItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Company { get; set; } = "";
+        public string? FlagReason { get; set; }
+        public string Status { get; set; } = "Pending Review";
     }
 }

@@ -30,7 +30,7 @@
                     </span>
 
                     <!-- Report Job Button -->
-                    <button class="btn btn-outline-danger btn-sm rounded-3 fw-bold px-3" @onclick="() => showReportModal = true">
+                    <button class="btn btn-outline-danger btn-sm rounded-3 fw-bold px-3" @onclick="OpenReportModal">
                         <i class="bi bi-flag-fill me-1"></i> Report
                     </button>
                 </div>
@@ -81,7 +81,7 @@
                                 <h5 class="modal-title fw-bold text-danger">
                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>Report Fake or Suspicious Job
                                 </h5>
-                                <button type="button" class="btn-close" @onclick="() => showReportModal = false"></button>
+                                <button type="button" class="btn-close" @onclick="CloseReportModal"></button>
                             </div>
                             <div class="modal-body py-3">
                                 @if (isReportSubmitted)
@@ -93,13 +93,13 @@
                                 else
                                 {
                                     <p class="text-muted small mb-3">Please state the reason why you are reporting this job (e.g. Asking for money, Fake company, Telegram/WhatsApp scam).</p>
-                                    <textarea class="form-control rounded-3" rows="3" placeholder="Enter reason..." @bind="reportReason"></textarea>
+                                    <textarea class="form-control rounded-3" rows="3" placeholder="Enter reason..." @bind="reportReason" @bind:event="oninput"></textarea>
                                 }
                             </div>
                             <div class="modal-footer border-0 pt-0">
                                 @if (!isReportSubmitted)
                                 {
-                                    <button class="btn btn-light rounded-3" @onclick="() => showReportModal = false">Cancel</button>
+                                    <button class="btn btn-light rounded-3" @onclick="CloseReportModal">Cancel</button>
                                     <button class="btn btn-danger rounded-3 fw-bold px-4" @onclick="SubmitReport" disabled="@string.IsNullOrWhiteSpace(reportReason)">Submit Report</button>
                                 }
                                 else
@@ -151,6 +151,13 @@
         {
             isLoading = false;
         }
+    }
+
+    private void OpenReportModal()
+    {
+        reportReason = "";
+        isReportSubmitted = false;
+        showReportModal = true;
     }
 
     private async Task SubmitReport()

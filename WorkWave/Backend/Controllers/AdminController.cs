@@ -86,7 +86,7 @@ public class AdminController : ApiControllerBase
             ActiveJobs = await _db.Jobs.CountAsync(j => j.IsActive),
             TotalApplications = await _db.JobApplications.CountAsync(),
             PendingApplications = await _db.JobApplications.CountAsync(a => a.Status == "Pending"),
-            FlaggedContent = 0,
+            FlaggedContent = await _db.Jobs.CountAsync(j => j.IsFlagged),
             DailySignups = dailySignups,
             RecentActivities = recentActivityList
         };

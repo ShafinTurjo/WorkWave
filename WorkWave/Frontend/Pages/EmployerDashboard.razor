@@ -77,22 +77,38 @@
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <h5 class="fw-bold mb-0">@job.Title</h5>
-                                        <span class="badge @(job.IsActive ? "bg-success-subtle text-success border border-success-subtle" : "bg-secondary-subtle text-secondary border border-secondary-subtle") rounded-pill">
-                                            @(job.IsActive ? "Active" : "Closed")
-                                        </span>
+                                        @if (job.IsFlagged)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Under Review
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge @(job.IsActive ? "bg-success-subtle text-success border border-success-subtle" : "bg-secondary-subtle text-secondary border border-secondary-subtle") rounded-pill">
+                                                @(job.IsActive ? "Active" : "Closed")
+                                            </span>
+                                        }
                                     </div>
                                     <p class="text-muted small mb-1">@job.Company · @job.Location · @job.JobType</p>
                                     <p class="text-muted small mb-0">Posted @job.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</p>
                                 </div>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="() => ToggleApplicants(job.Id)">
-                                        @(expandedJobId == job.Id ? "Hide Applicants" : "View Applicants")
-                                    </button>
-                                    
-                                    <!-- Toggle Job Status (Close / Reopen) Button -->
-                                    <button class="btn btn-sm @(job.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-3" @onclick="() => ToggleJobStatus(job)">
-                                        @(job.IsActive ? "Close Job" : "Reopen Job")
-                                    </button>
+                                    @if (job.IsFlagged)
+                                    {
+                                        <span class="text-muted small align-self-center fst-italic me-2">Pending Admin Review</span>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="() => ToggleApplicants(job.Id)">
+                                            @(expandedJobId == job.Id ? "Hide Applicants" : "View Applicants")
+                                        </button>
+
+                                        <!-- Toggle Job Status (Close / Reopen) Button -->
+                                        <button class="btn btn-sm @(job.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-3" @onclick="() => ToggleJobStatus(job)">
+                                            @(job.IsActive ? "Close Job" : "Reopen Job")
+                                        </button>
+                                    }
 
                                     <button class="btn btn-sm btn-outline-danger rounded-pill px-3" @onclick="() => DeleteJob(job.Id)">
                                         Delete
@@ -170,7 +186,7 @@
     private bool loadingApplicants = false;
     private string? errorMessage;
     private int? expandedJobId;
-    
+
     private EmployerDashboardStatsDto? stats;
     private List<JobItem> jobs = new();
     private List<ApplicationItem> applicants = new();
@@ -313,6 +329,7 @@
         public string Location { get; set; } = "";
         public string JobType { get; set; } = "";
         public bool IsActive { get; set; } = true;
+        public bool IsFlagged { get; set; } = false;
         public DateTime PostedAt { get; set; }
     }
 
