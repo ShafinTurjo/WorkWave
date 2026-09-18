@@ -44,7 +44,7 @@ public class JobResponse
     public string[] Tags { get; set; } = Array.Empty<string>();
     public DateTime PostedAt { get; set; }
 
-    // --- Fraud Detection-এর জন্য নতুন ফিল্ডগুলো ---
+    
     public bool IsFlagged { get; set; }
     public string? FlagReason { get; set; }
     public string Status { get; set; } = "Active";

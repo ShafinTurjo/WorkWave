@@ -77,7 +77,13 @@
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <h5 class="fw-bold mb-0">@job.Title</h5>
-                                        @if (job.IsFlagged)
+                                        @if (job.Status == "Rejected")
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
+                                                <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                            </span>
+                                        }
+                                        else if (job.IsFlagged)
                                         {
                                             <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">
                                                 <i class="bi bi-exclamation-triangle-fill me-1"></i> Under Review
@@ -92,19 +98,23 @@
                                     </div>
                                     <p class="text-muted small mb-1">@job.Company · @job.Location · @job.JobType</p>
                                     <p class="text-muted small mb-0">Posted @job.PostedAt.ToLocalTime().ToString("dd MMM yyyy")</p>
+
+                                    @if (job.Status == "Rejected" && !string.IsNullOrEmpty(job.RejectionReason))
+                                    {
+                                        <p class="text-danger small mt-1 mb-0"><strong>Reason:</strong> @job.RejectionReason</p>
+                                    }
                                 </div>
                                 <div class="d-flex gap-2">
                                     @if (job.IsFlagged)
                                     {
                                         <span class="text-muted small align-self-center fst-italic me-2">Pending Admin Review</span>
                                     }
-                                    else
+                                    else if (job.Status != "Rejected")
                                     {
                                         <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" @onclick="() => ToggleApplicants(job.Id)">
                                             @(expandedJobId == job.Id ? "Hide Applicants" : "View Applicants")
                                         </button>
 
-                                        <!-- Toggle Job Status (Close / Reopen) Button -->
                                         <button class="btn btn-sm @(job.IsActive ? "btn-outline-warning" : "btn-outline-success") rounded-pill px-3" @onclick="() => ToggleJobStatus(job)">
                                             @(job.IsActive ? "Close Job" : "Reopen Job")
                                         </button>
@@ -261,7 +271,7 @@
         }
         catch (Exception)
         {
-            // Leave empty
+
         }
         finally
         {

@@ -7,14 +7,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddOpenApi();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddControllers();
 
 builder.Services.Configure<EmailOptions>(
     builder.Configuration.GetSection("Email"));
-
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt"));
 
@@ -83,12 +85,9 @@ else
 {
     app.Logger.LogInformation("ApplyMigrationsOnStartup is false — skipping automatic migration.");
 }
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
-}
+
 Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resumes"));
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -96,6 +95,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// CORS MUST come before Authentication and Authorization
 app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthentication();
@@ -110,7 +111,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
+    var forecast = Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),

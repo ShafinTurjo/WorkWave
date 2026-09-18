@@ -211,6 +211,23 @@
         background-color: #ffebe9 !important;
         color: #cf222e !important;
     }
+
+    .action-buttons-group {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.35rem;
+        white-space: nowrap;
+    }
+
+    .badge-flag-reason {
+        display: inline-block;
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
 </style>
 
 <div class="dashboard-container">
@@ -233,8 +250,8 @@
                 <button class="btn btn-export d-flex align-items-center gap-2" @onclick="ExportUsersToCsv">
                     <i class="bi bi-download"></i> Export CSV
                 </button>
-                <button class="btn btn-icon">
-                    <i class="bi bi-three-dots"></i>
+                <button class="btn btn-icon" @onclick="RefreshAllData" title="Refresh Dashboard">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
         </div>
@@ -250,7 +267,7 @@
         <!-- Stats Overview -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="stat-box">
+                <div class="stat-box card-panel">
                     <div class="stat-title">Total users (all time)</div>
                     <div class="stat-number">@stats.TotalUsers</div>
                     <div class="stat-sub text-success-custom">
@@ -259,21 +276,21 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-box">
+                <div class="stat-box card-panel">
                     <div class="stat-title">Posted jobs (all time)</div>
                     <div class="stat-number">@stats.TotalJobs</div>
                     <div class="stat-sub text-muted">@stats.ActiveJobs currently active</div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-box">
+                <div class="stat-box card-panel">
                     <div class="stat-title">Applications (all time)</div>
                     <div class="stat-number">@stats.TotalApplications</div>
                     <div class="stat-sub text-warning-custom">@stats.PendingApplications pending review</div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-box">
+                <div class="stat-box card-panel">
                     <div class="stat-title">Flagged content</div>
                     <div class="stat-number text-danger">@stats.FlaggedContent</div>
                     <div class="stat-sub text-muted">@flaggedJobs.Count pending review</div>
@@ -315,7 +332,7 @@
                             @foreach (var act in stats.RecentActivities)
                             {
                                 <div class="activity-item">
-                                    <i class="bi @act.Icon activity-icon"></i>
+                                    <i class="bi @act.Icon activity-icon text-primary"></i>
                                     <span>@act.Text <strong class="fw-semibold">@act.Highlight</strong></span>
                                 </div>
                             }
@@ -333,17 +350,17 @@
         <ul class="nav nav-tabs-custom">
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "users" ? "active" : "")" @onclick='() => activeTab = "users"'>
-                    <i class="bi bi-people me-1"></i> Users
+                    <i class="bi bi-people me-1"></i> Users (@users.Count)
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "jobs" ? "active" : "")" @onclick='() => activeTab = "jobs"'>
-                    <i class="bi bi-briefcase me-1"></i> Jobs
+                    <i class="bi bi-briefcase me-1"></i> Jobs (@jobs.Count)
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "applications" ? "active" : "")" @onclick='() => activeTab = "applications"'>
-                    <i class="bi bi-file-earmark-text me-1"></i> Applications
+                    <i class="bi bi-file-earmark-text me-1"></i> Applications (@applications.Count)
                 </button>
             </li>
             <li class="nav-item">
@@ -359,7 +376,7 @@
             <div class="card-panel p-0">
                 <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
                     <span class="fw-bold text-dark fs-6">Registered users (@FilteredUsers.Count)</span>
-                    <div class="input-group input-group-sm style-search" style="max-width: 260px;">
+                    <div class="input-group input-group-sm" style="max-width: 260px;">
                         <input type="text" class="form-control rounded-2 bg-light border-0" placeholder="Search name or email" @bind="userSearchTerm" @bind:event="oninput" />
                     </div>
                 </div>
@@ -367,6 +384,10 @@
                 @if (loadingUsers)
                 {
                     <div class="p-4 text-center text-muted">Loading users...</div>
+                }
+                else if (!FilteredUsers.Any())
+                {
+                    <div class="p-4 text-center text-muted">No users found matching your search.</div>
                 }
                 else
                 {
@@ -379,7 +400,7 @@
                                     <th>Role</th>
                                     <th>Status</th>
                                     <th>Joined</th>
-                                    <th class="text-end"></th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -402,7 +423,7 @@
                                             }
                                             else
                                             {
-                                                <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteUser(u.Id)">
+                                                <button class="btn btn-link text-danger p-0 border-0" title="Delete User" @onclick="() => DeleteUser(u.Id)">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             }
@@ -419,68 +440,90 @@
         {
             <div class="card-panel p-0">
                 <div class="p-3 border-bottom fw-bold text-dark fs-6">Job Postings (@jobs.Count)</div>
-                <div class="table-responsive">
-                    <table class="table table-custom align-middle">
-                        <thead>
-                            <tr>
-                                <th>Job Title</th>
-                                <th>Company</th>
-                                <th>Posted Date</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var j in jobs)
-                            {
+                @if (loadingJobs)
+                {
+                    <div class="p-4 text-center text-muted">Loading jobs...</div>
+                }
+                else if (!jobs.Any())
+                {
+                    <div class="p-4 text-center text-muted">No job postings found.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle">
+                            <thead>
                                 <tr>
-                                    <td class="fw-semibold text-primary">@j.Title</td>
-                                    <td>@j.Company</td>
-                                    <td class="text-muted">@j.PostedAt.ToString("dd MMM yyyy")</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteJob(j.Id)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
+                                    <th>Job Title</th>
+                                    <th>Company</th>
+                                    <th>Posted Date</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var j in jobs)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold text-primary">@j.Title</td>
+                                        <td>@j.Company</td>
+                                        <td class="text-muted">@j.PostedAt.ToString("dd MMM yyyy")</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-link text-danger p-0 border-0" title="Delete Job" @onclick="() => DeleteJob(j.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         }
         else if (activeTab == "applications")
         {
             <div class="card-panel p-0">
                 <div class="p-3 border-bottom fw-bold text-dark fs-6">Applications (@applications.Count)</div>
-                <div class="table-responsive">
-                    <table class="table table-custom align-middle">
-                        <thead>
-                            <tr>
-                                <th>Job Title</th>
-                                <th>Applicant</th>
-                                <th>Email</th>
-                                <th>Applied Date</th>
-                                <th class="text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var a in applications)
-                            {
+                @if (loadingApplications)
+                {
+                    <div class="p-4 text-center text-muted">Loading applications...</div>
+                }
+                else if (!applications.Any())
+                {
+                    <div class="p-4 text-center text-muted">No applications found.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle">
+                            <thead>
                                 <tr>
-                                    <td class="fw-semibold">@a.JobTitle</td>
-                                    <td>@a.ApplicantName</td>
-                                    <td class="text-muted">@a.ApplicantEmail</td>
-                                    <td class="text-muted">@a.AppliedAt.ToString("dd MMM yyyy")</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-link text-danger p-0 border-0" @onclick="() => DeleteApplication(a.Id)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
+                                    <th>Job Title</th>
+                                    <th>Applicant</th>
+                                    <th>Email</th>
+                                    <th>Applied Date</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in applications)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@a.JobTitle</td>
+                                        <td>@a.ApplicantName</td>
+                                        <td class="text-muted">@a.ApplicantEmail</td>
+                                        <td class="text-muted">@a.AppliedAt.ToString("dd MMM yyyy")</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-link text-danger p-0 border-0" title="Delete Application" @onclick="() => DeleteApplication(a.Id)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         }
         else if (activeTab == "reports")
@@ -519,7 +562,7 @@
                                         <td class="fw-semibold text-dark">@fj.Title</td>
                                         <td>@fj.Company</td>
                                         <td>
-                                            <span class="badge bg-danger-subtle px-2 py-1 rounded-2">
+                                            <span class="badge bg-danger-subtle px-2 py-1 rounded-2 badge-flag-reason" title="@fj.FlagReason">
                                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>
                                                 @(string.IsNullOrEmpty(fj.FlagReason) ? "Suspicious Activity" : fj.FlagReason)
                                             </span>
@@ -528,12 +571,14 @@
                                             <span class="badge bg-warning text-dark">@fj.Status</span>
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-success btn-sm rounded-2 me-1 fw-semibold" @onclick="() => ReviewJob(fj.Id, true)">
-                                                <i class="bi bi-check-lg me-1"></i> Approve
-                                            </button>
-                                            <button class="btn btn-danger btn-sm rounded-2 fw-semibold" @onclick="() => ReviewJob(fj.Id, false)">
-                                                <i class="bi bi-trash me-1"></i> Remove
-                                            </button>
+                                            <div class="action-buttons-group">
+                                                <button class="btn btn-success btn-sm px-2 py-1 rounded-2 fw-semibold" style="font-size: 0.75rem;" @onclick="() => ReviewJob(fj.Id, true)" title="Approve Job">
+                                                    <i class="bi bi-check-lg"></i> Approve
+                                                </button>
+                                                <button class="btn btn-danger btn-sm px-2 py-1 rounded-2 fw-semibold" style="font-size: 0.75rem;" @onclick="() => ReviewJob(fj.Id, false)" title="Remove Job">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 }
@@ -553,6 +598,8 @@
     private string userSearchTerm = "";
 
     private bool loadingUsers = true;
+    private bool loadingJobs = false;
+    private bool loadingApplications = false;
     private bool loadingFlaggedJobs = false;
 
     private StatsModel stats = new();
@@ -577,12 +624,18 @@
         }
 
         authorized = true;
+        await RefreshAllData();
+    }
 
-        await LoadStats();
-        await LoadUsers();
-        await LoadJobs();
-        await LoadApplications();
-        await LoadFlaggedJobs();
+    private async Task RefreshAllData()
+    {
+        await Task.WhenAll(
+            LoadStats(),
+            LoadUsers(),
+            LoadJobs(),
+            LoadApplications(),
+            LoadFlaggedJobs()
+        );
     }
 
     private async Task LoadStats()
@@ -592,7 +645,7 @@
             var result = await Http.GetFromJsonAsync<StatsModel>($"api/admin/stats?adminUserId={AuthState.UserId}");
             if (result is not null) stats = result;
         }
-        catch (Exception) { }
+        catch (Exception) { errorMessage = "Could not load dashboard statistics."; }
     }
 
     private async Task LoadUsers()
@@ -609,22 +662,26 @@
 
     private async Task LoadJobs()
     {
+        loadingJobs = true;
         try
         {
             var result = await Http.GetFromJsonAsync<List<JobItem>>($"api/admin/jobs?adminUserId={AuthState.UserId}");
             if (result is not null) jobs = result;
         }
         catch (Exception) { }
+        finally { loadingJobs = false; }
     }
 
     private async Task LoadApplications()
     {
+        loadingApplications = true;
         try
         {
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/admin/applications?adminUserId={AuthState.UserId}");
             if (result is not null) applications = result;
         }
         catch (Exception) { }
+        finally { loadingApplications = false; }
     }
 
     private async Task LoadFlaggedJobs()
@@ -651,7 +708,7 @@
                 await LoadJobs();
             }
         }
-        catch (Exception) { }
+        catch (Exception) { errorMessage = "Failed to review the job."; }
     }
 
     private async Task DeleteUser(int userId)
@@ -668,12 +725,12 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { }
+        catch (Exception) { errorMessage = "Failed to delete user."; }
     }
 
     private async Task DeleteJob(int jobId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this job?");
         if (!confirmed) return;
 
         try
@@ -685,12 +742,12 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { }
+        catch (Exception) { errorMessage = "Failed to delete job."; }
     }
 
     private async Task DeleteApplication(int appId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this application?");
         if (!confirmed) return;
 
         try
@@ -702,7 +759,7 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { }
+        catch (Exception) { errorMessage = "Failed to delete application."; }
     }
 
     private string GetRoleBadgeClass(string role) => role switch

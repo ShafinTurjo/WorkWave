@@ -19,20 +19,19 @@ public class JobsController : ApiControllerBase
         _db = db;
     }
 
-    // GET api/jobs (শুধুমাত্র Active এবং Flagged না হওয়া চাকরিগুলো সাধারণ ইউজারদের দেখাবে)
+    
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<List<JobResponse>>> GetAll()
     {
         var jobs = await _db.Jobs
-            .Where(j => j.IsActive && !j.IsFlagged && j.Status == "Active")
             .OrderByDescending(j => j.PostedAt)
             .ToListAsync();
 
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // GET api/jobs/flagged (শুধুমাত্র Admin ফ্ল্যাগ হওয়া বা ফ্ল্যাগড জবেগুলো রিভিউয়ের জন্য দেখতে পাবে)
+    
     [HttpGet("flagged")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<List<JobResponse>>> GetFlaggedJobs()
@@ -45,7 +44,7 @@ public class JobsController : ApiControllerBase
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // GET api/jobs/5 — publicly viewable
+    
     [HttpGet("{id:int}")]
     [AllowAnonymous]
     public async Task<ActionResult<JobResponse>> GetById(int id)
@@ -56,7 +55,6 @@ public class JobsController : ApiControllerBase
         return Ok(ToResponse(job));
     }
 
-    // GET api/jobs/mine/5 (একক নিয়োগকর্তার সব Active ও Closed চাকরিগুলো দেখাবে)
     [HttpGet("mine/{userId:int}")]
     [Authorize]
     public async Task<ActionResult<List<JobResponse>>> GetMine(int userId)
@@ -72,7 +70,6 @@ public class JobsController : ApiControllerBase
         return Ok(jobs.Select(ToResponse).ToList());
     }
 
-    // PUT api/jobs/5/status (স্ট্যাটাস Active/Closed করার জন্য)
     [HttpPut("{id:int}/status")]
     [Authorize]
     public async Task<IActionResult> UpdateJobStatus(int id, [FromBody] UpdateJobStatusRequest request)
@@ -89,7 +86,6 @@ public class JobsController : ApiControllerBase
         return NoContent();
     }
 
-    // PUT api/jobs/5/review (Admin ফ্ল্যাগ করা জব Unflag/Approve বা Ban/Reject করতে পারবে)
     [HttpPut("{id:int}/review")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ReviewJob(int id, [FromQuery] bool approve, [FromQuery] string? rejectionReason = null)
@@ -101,12 +97,13 @@ public class JobsController : ApiControllerBase
         {
             job.IsFlagged = false;
             job.Status = "Active";
+            job.IsActive = true;
             job.FlagReason = null;
             job.RejectionReason = null;
         }
         else
         {
-            job.IsFlagged = true;
+            job.IsFlagged = false;
             job.Status = "Rejected";
             job.IsActive = false;
             job.RejectionReason = rejectionReason ?? "Rejected by admin review.";
@@ -116,7 +113,7 @@ public class JobsController : ApiControllerBase
         return Ok(new { message = approve ? "Job approved successfully." : "Job rejected and marked as removed." });
     }
 
-    // POST api/jobs/5/report (Worker/User কোনো জব রিপোর্ট করার জন্য)
+    
     [HttpPost("{id:int}/report")]
     [Authorize]
     public async Task<IActionResult> ReportJob(int id, [FromBody] ReportJobRequest request)
@@ -132,7 +129,6 @@ public class JobsController : ApiControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        // ইউজারের রিপোর্টের ভিত্তিতে জবটিকে ফ্ল্যাগড মার্ক করা
         job.IsFlagged = true;
         job.FlagReason = $"Reported by user: {request.Reason}";
 
@@ -142,7 +138,7 @@ public class JobsController : ApiControllerBase
         return Ok(new { message = "Thank you for reporting. Our admin team will review this job." });
     }
 
-    // DELETE api/jobs/5
+    
     [HttpDelete("{id:int}")]
     [Authorize]
     public async Task<IActionResult> Delete(int id)
@@ -158,12 +154,11 @@ public class JobsController : ApiControllerBase
         return NoContent();
     }
 
-    // POST api/jobs (ডিটেকটর সার্ভিস দিয়ে ফ্রড ফিল্টারসহ জব পোস্ট তৈরি)
+    
     [HttpPost]
     [Authorize(Roles = "Employer,Admin")]
     public async Task<ActionResult<JobResponse>> Create(JobCreateRequest request)
     {
-        // FraudDetector সার্ভিস চালিয়ে টেক্সট চেক
         var (isFraud, reason) = FraudDetector.EvaluateJob(request.Title, request.Description);
 
         var job = new Job
