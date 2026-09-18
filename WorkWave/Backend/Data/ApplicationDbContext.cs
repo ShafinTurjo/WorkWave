@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
     public DbSet<Resume> Resumes => Set<Resume>();
+    public DbSet<JobReport> JobReports => Set<JobReport>(); // <--- Notun JobReport DbSet
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +54,19 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // JobReport Relationship Configuration
+        modelBuilder.Entity<JobReport>()
+            .HasOne(r => r.Job)
+            .WithMany()
+            .HasForeignKey(r => r.JobId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<JobReport>()
+            .HasOne(r => r.ReportedByUser)
+            .WithMany()
+            .HasForeignKey(r => r.ReportedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Seed one default Admin account.
         // Login: admin@workwave.com / Admin@123  (please change the password after first login)

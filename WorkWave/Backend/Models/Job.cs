@@ -27,7 +27,7 @@ public class Job
     public string JobType { get; set; } = "";
 
     // Job Status: Active (true) or Closed (false)
-    public bool IsActive { get; set; } = true; 
+    public bool IsActive { get; set; } = true;
 
     // Stored as a comma-separated string; exposed as string[] via the API DTO.
     public string TagsCsv { get; set; } = "";
@@ -41,4 +41,9 @@ public class Job
     public string SkillsRequired { get; set; } = "";
 
     public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
+
+    
+    public bool IsFlagged { get; set; } = false;
+    public string? FlagReason { get; set; }
+    public string Status { get; set; } = "Active"; // Values: Active, Flagged, Removed
 }
