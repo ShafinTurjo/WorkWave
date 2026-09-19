@@ -105,9 +105,9 @@
                     await AuthState.SetUserAsync(result.UserId, result.FullName, result.Email, result.Role, result.Token);
                     var destination = result.Role switch
                     {
-                        "Admin" => "/admin",
-                        "Employer" => "/employer",
-                        _ => "/worker"
+                        "Admin" => "admin",
+                        "Employer" => "employer",
+                        _ => "worker"
                     };
                     Navigation.NavigateTo(destination);
                 }

@@ -22,7 +22,7 @@ builder.Services.Configure<EmailOptions>(
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt"));
 
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(c => c.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
