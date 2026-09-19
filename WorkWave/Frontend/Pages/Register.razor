@@ -6,80 +6,77 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 col-lg-5">
-        <div class="card border-0 shadow p-4 rounded">
-            <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary">@Loc.T("register_title")</h3>
-                <p class="text-muted small">@Loc.T("register_subtitle")</p>
+<div class="auth-page" style="background-image: linear-gradient(135deg, rgba(15,23,42,0.75), rgba(15,23,42,0.55)), url('/images/auth-bg.jpg'); background-size: cover; background-position: center;">
+    <div class="glass-card p-4 p-md-5" style="max-width: 460px; width: 100%;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-white">@Loc.T("register_title")</h3>
+            <p class="text-white-50 small">@Loc.T("register_subtitle")</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger py-2 small">@errorMessage</div>
+        }
+
+        @if (registeredEmail is not null)
+        {
+            <div class="alert alert-success">
+                <strong>Almost done!</strong> We've sent a verification link to <strong>@registeredEmail</strong>.
+                Please check your inbox (and spam folder) and click the link before logging in.
             </div>
-
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger py-2 small">@errorMessage</div>
-            }
-
-            @if (registeredEmail is not null)
-            {
-                <div class="alert alert-success">
-                    <strong>Almost done!</strong> We've sent a verification link to <strong>@registeredEmail</strong>.
-                    Please check your inbox (and spam folder) and click the link before logging in.
-                </div>
-                <div class="text-center mt-3">
-                    <a href="login" class="btn btn-primary fw-bold px-4">Go to Login</a>
-                </div>
-            }
-            else
-            {
+            <div class="text-center mt-3">
+                <a href="login" class="btn btn-primary fw-bold px-4 hover-lift">Go to Login</a>
+            </div>
+        }
+        else
+        {
             <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration">
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_i_want_to")</label>
-                     <InputSelect @bind-Value="registerModel.Role" class="form-select">
-                        <option value="Worker">@Loc.T("role_worker")</option>
-                        <option value="Employer">@Loc.T("role_employer")</option>
+                    <label class="form-label fw-semibold text-white">@Loc.T("lbl_i_want_to")</label>
+                    <InputSelect @bind-Value="registerModel.Role" class="form-select glass-input">
+                        <option value="Worker" style="color:#111;">@Loc.T("role_worker")</option>
+                        <option value="Employer" style="color:#111;">@Loc.T("role_employer")</option>
                     </InputSelect>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_full_name")</label>
-                    <InputText @bind-Value="registerModel.FullName" class="form-control" />
+                    <label class="form-label fw-semibold text-white">@Loc.T("lbl_full_name")</label>
+                    <InputText @bind-Value="registerModel.FullName" class="form-control glass-input" />
                     <ValidationMessage For="@(() => registerModel.FullName)" class="text-danger small" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_email")</label>
-                    <InputText @bind-Value="registerModel.Email" class="form-control" />
+                    <label class="form-label fw-semibold text-white">@Loc.T("lbl_email")</label>
+                    <InputText @bind-Value="registerModel.Email" class="form-control glass-input" />
                     <ValidationMessage For="@(() => registerModel.Email)" class="text-danger small" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_password")</label>
-                    <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
+                    <label class="form-label fw-semibold text-white">@Loc.T("lbl_password")</label>
+                    <InputText @bind-Value="registerModel.Password" type="password" class="form-control glass-input" />
                     <ValidationMessage For="@(() => registerModel.Password)" class="text-danger small" />
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold">@Loc.T("lbl_confirm_password")</label>
-                    <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control" />
+                    <label class="form-label fw-semibold text-white">@Loc.T("lbl_confirm_password")</label>
+                    <InputText @bind-Value="registerModel.ConfirmPassword" type="password" class="form-control glass-input" />
                     <ValidationMessage For="@(() => registerModel.ConfirmPassword)" class="text-danger small" />
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 fw-bold py-2" disabled="@isSubmitting">
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 hover-lift" disabled="@isSubmitting">
                     @(isSubmitting ? Loc.T("btn_creating_account") : Loc.T("btn_register"))
                 </button>
             </EditForm>
-            }
+        }
 
-            <div class="text-center mt-4">
-                <span class="text-muted small">@Loc.T("msg_have_account") </span>
-                <a href="login" class="text-primary fw-bold text-decoration-none small">@Loc.T("link_login_here")</a>
-            </div>
+        <div class="text-center mt-4">
+            <span class="text-white-50 small">@Loc.T("msg_have_account") </span>
+            <a href="login" class="text-white fw-bold text-decoration-none small">@Loc.T("link_login_here")</a>
         </div>
     </div>
 </div>
-
 @code {
     private RegisterModel registerModel = new RegisterModel();
     private string? errorMessage;

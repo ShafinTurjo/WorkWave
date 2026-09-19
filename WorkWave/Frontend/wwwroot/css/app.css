@@ -88,7 +88,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f6f7fb;
+    background: linear-gradient(rgba(7,12,9,0.82), rgba(7,12,9,0.82)), url('/images/s.jpg') center/cover no-repeat;
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
@@ -124,7 +124,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
     font-family: 'Poppins', sans-serif;
     font-weight: 800;
     font-size: 1.7rem;
-    color: var(--brand-dark);
+    color: #fff;
     letter-spacing: -0.02em;
     opacity: 0;
     animation: fade-slide-in 0.5s ease-out 0.55s forwards;
