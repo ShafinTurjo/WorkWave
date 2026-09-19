@@ -40,6 +40,7 @@ public class ResumeController : ApiControllerBase
         {
             existing.FullName = resume.FullName;
             existing.Phone = resume.Phone;
+            existing.Location = resume.Location; 
             existing.Summary = resume.Summary;
             existing.Experience = resume.Experience;
             existing.Education = resume.Education;

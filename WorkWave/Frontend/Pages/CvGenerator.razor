@@ -28,6 +28,10 @@
                     <input class="form-control" @bind="resume.Phone" @bind:event="oninput" />
                 </div>
                 <div class="mb-3">
+                    <label class="form-label font-weight-bold">Location</label>
+                    <input class="form-control" @bind="resume.Location" @bind:event="oninput" placeholder="e.g. Dhaka, Bangladesh" />
+                </div>
+                <div class="mb-3">
                     <label class="form-label font-weight-bold">Professional Summary</label>
                     <textarea class="form-control" rows="3" @bind="resume.Summary" @bind:event="oninput" placeholder="Brief summary about your goals..."></textarea>
                 </div>
@@ -78,7 +82,7 @@
                                 <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Contact</h6>
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <i class="bi bi-geo-alt-fill"></i>
-                                    <span>Dhaka, Bangladesh</span>
+                                    <span>@(string.IsNullOrWhiteSpace(resume.Location) ? "Location" : resume.Location)</span>
                                 </div>
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <i class="bi bi-telephone-fill"></i>
@@ -213,6 +217,7 @@
         public int UserId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
         public string Experience { get; set; } = string.Empty;
         public string Education { get; set; } = string.Empty;

@@ -14,7 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Job> Jobs => Set<Job>();
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
     public DbSet<Resume> Resumes => Set<Resume>();
-    public DbSet<JobReport> JobReports => Set<JobReport>(); // <--- Notun JobReport DbSet
+    public DbSet<JobReport> JobReports => Set<JobReport>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,8 +24,6 @@ public class ApplicationDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        // Any user created before this feature existed (or seeded directly, like Admin)
-        // is treated as already verified — only new self-registrations start unverified.
         modelBuilder.Entity<User>()
             .Property(u => u.IsEmailVerified)
             .HasDefaultValue(true);
@@ -68,8 +66,7 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(r => r.ReportedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Seed one default Admin account.
-        // Login: admin@workwave.com / Admin@123  (please change the password after first login)
+        // Seed default Admin account
         modelBuilder.Entity<User>().HasData(new User
         {
             Id = 1,
