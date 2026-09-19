@@ -207,13 +207,13 @@
 
         if (!AuthState.IsLoggedIn)
         {
-            Navigation.NavigateTo("/login");
+            Navigation.NavigateTo("login");
             return;
         }
 
         if (!AuthState.CanAccess("Employer"))
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo("");
             return;
         }
 
