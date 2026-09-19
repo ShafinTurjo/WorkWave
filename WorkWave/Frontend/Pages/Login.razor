@@ -6,69 +6,66 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card border-0 shadow p-4 rounded">
-            <div class="text-center mb-4">
-                <h3 class="fw-bold text-primary">@Loc.T("login_title")</h3>
-                <p class="text-muted small">@Loc.T("login_subtitle")</p>
-            </div>
+<div class="auth-page" style="background-image: linear-gradient(135deg, rgba(15,23,42,0.75), rgba(15,23,42,0.55)), url('images/auth-bg.jpg'); background-size: cover; background-position: center;">
+    <div class="glass-card p-4 p-md-5" style="max-width: 420px; width: 100%;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-white">@Loc.T("login_title")</h3>
+            <p class="text-white-50 small">@Loc.T("login_subtitle")</p>
+        </div>
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger py-2 small">
-                    @errorMessage
-                    @if (showResendOption)
-                    {
-                        <div class="mt-2">
-                            <button type="button" class="btn btn-sm btn-outline-danger" disabled="@isResending" @onclick="HandleResend">
-                                @(isResending ? "Sending..." : "Resend verification email")
-                            </button>
-                        </div>
-                    }
-                </div>
-            }
-            @if (!string.IsNullOrEmpty(resendMessage))
-            {
-                <div class="alert alert-success py-2 small">@resendMessage</div>
-            }
-
-            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
-                <DataAnnotationsValidator />
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_email")</label>
-                    <InputText @bind-Value="loginModel.Email" class="form-control" />
-                    <ValidationMessage For="@(() => loginModel.Email)" class="text-danger small" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">@Loc.T("lbl_password")</label>
-                    <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
-                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small" />
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <InputCheckbox @bind-Value="loginModel.RememberMe" class="form-check-input" id="rememberMe" />
-                        <label class="form-check-label small" for="rememberMe">@Loc.T("remember_me")</label>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger py-2 small">
+                @errorMessage
+                @if (showResendOption)
+                {
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" disabled="@isResending" @onclick="HandleResend">
+                            @(isResending ? "Sending..." : "Resend verification email")
+                        </button>
                     </div>
-                    <a href="forgot-password" class="text-primary fw-bold text-decoration-none small">@Loc.T("forgot_password")</a>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 fw-bold py-2" disabled="@isSubmitting">
-                    @(isSubmitting ? Loc.T("btn_signing_in") : Loc.T("btn_signin"))
-                </button>
-            </EditForm>
-
-            <div class="text-center mt-4">
-                <span class="text-muted small">@Loc.T("msg_no_account") </span>
-                <a href="register" class="text-primary fw-bold text-decoration-none small">@Loc.T("link_create_account")</a>
+                }
             </div>
+        }
+        @if (!string.IsNullOrEmpty(resendMessage))
+        {
+            <div class="alert alert-success py-2 small">@resendMessage</div>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-white">@Loc.T("lbl_email")</label>
+                <InputText @bind-Value="loginModel.Email" class="form-control glass-input" />
+                <ValidationMessage For="@(() => loginModel.Email)" class="text-danger small" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-white">@Loc.T("lbl_password")</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="form-control glass-input" />
+                <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small" />
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <InputCheckbox @bind-Value="loginModel.RememberMe" class="form-check-input" id="rememberMe" />
+                    <label class="form-check-label small text-white-50" for="rememberMe">@Loc.T("remember_me")</label>
+                </div>
+                <a href="forgot-password" class="text-white fw-bold text-decoration-none small">@Loc.T("forgot_password")</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 hover-lift" disabled="@isSubmitting">
+                @(isSubmitting ? Loc.T("btn_signing_in") : Loc.T("btn_signin"))
+            </button>
+        </EditForm>
+
+        <div class="text-center mt-4">
+            <span class="text-white-50 small">@Loc.T("msg_no_account") </span>
+            <a href="register" class="text-white fw-bold text-decoration-none small">@Loc.T("link_create_account")</a>
         </div>
     </div>
 </div>
-
 @code {
     private LoginModel loginModel = new LoginModel();
     private string? errorMessage;
