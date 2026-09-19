@@ -1,12 +1,70 @@
-/* ============ Brand Theme Variables ============ */
 :root {
     --brand-primary: #4f46e5;
     --brand-primary-dark: #4338ca;
     --brand-secondary: #0ea5e9;
     --brand-dark: #0f172a;
     --brand-bg: #f6f7fb;
+    --radius-lg: 1.5rem;
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 20px 45px rgba(15, 23, 42, 0.15);
 }
 
+/* ============ Reusable Motion / Glass Utilities ============ */
+.hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+    .hover-lift:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-lg);
+    }
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.glass-input {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+}
+
+    .glass-input::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .glass-input:focus {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.6) !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.15) !important;
+        color: #fff !important;
+    }
+
+.auth-page {
+    min-height: calc(100vh - 3.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.94), rgba(14, 165, 233, 0.88));
+    background-color: var(--brand-dark);
+}
+
+.site-footer a.footer-link {
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+    .site-footer a.footer-link:hover {
+        color: #fff;
+    }
 body {
     background-color: var(--brand-bg);
     font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
