@@ -31,7 +31,7 @@ public class ApplicationsController : ApiControllerBase
     [RequestSizeLimit(MaxResumeSizeBytes + 1024)]
     public async Task<ActionResult<ApplicationResponse>> Apply([FromForm] ApplyRequest request)
     {
-        var jobExists = await _db.Jobs.AnyAsync(j => j.Id == request.JobId);
+        var jobExists = await _db.Jobs.AnyAsync(j => j.Id == request.JobId && !j.IsFlagged && j.Status != "Flagged" && j.Status != "Rejected" && j.Status != "Removed");
         if (!jobExists)
         {
             return NotFound(new { message = $"Job {request.JobId} not found." });
