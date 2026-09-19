@@ -24,7 +24,13 @@ public class JobsController : ApiControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<List<JobResponse>>> GetAll()
     {
+        // Reported / flagged / rejected / removed jobs are hidden from the public list.
+        // (Admins still see them via GET api/jobs/flagged; owners via GET api/jobs/mine/{id}.)
         var jobs = await _db.Jobs
+            .Where(j => !j.IsFlagged
+                        && j.Status != "Flagged"
+                        && j.Status != "Rejected"
+                        && j.Status != "Removed")
             .OrderByDescending(j => j.PostedAt)
             .ToListAsync();
 
@@ -51,6 +57,12 @@ public class JobsController : ApiControllerBase
     {
         var job = await _db.Jobs.FindAsync(id);
         if (job is null) return NotFound(new { message = $"Job {id} not found." });
+
+        // Reported / flagged jobs must not be reachable by direct link either.
+        if (!IsPublic(job) && !CanSeeHiddenJob(job))
+        {
+            return NotFound(new { message = $"Job {id} not found." });
+        }
 
         return Ok(ToResponse(job));
     }
@@ -184,6 +196,20 @@ public class JobsController : ApiControllerBase
         await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = job.Id }, ToResponse(job));
+    }
+
+    // A job is visible to the public only while it is not reported/flagged/rejected/removed.
+    private static bool IsPublic(Job job) =>
+        !job.IsFlagged
+        && job.Status != "Flagged"
+        && job.Status != "Rejected"
+        && job.Status != "Removed";
+
+    // GetById is anonymous, so the caller may not be logged in: check before reading claims.
+    private bool CanSeeHiddenJob(Job job)
+    {
+        if (User.Identity?.IsAuthenticated != true) return false;
+        return IsAdmin || job.PostedByUserId == CurrentUserId;
     }
 
     private static JobResponse ToResponse(Job job) => new()
