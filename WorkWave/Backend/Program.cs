@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"[DEBUG] Connection string length: {connStr?.Length ?? 0}");
+Console.WriteLine($"[DEBUG] Connection string: {connStr?.Replace(connStr.Split("Password=")[1].Split(';')[0], "****")}");
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
