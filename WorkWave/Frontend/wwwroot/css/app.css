@@ -89,7 +89,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
     align-items: center;
     justify-content: center;
     background: linear-gradient(rgba(7,12,9,0.82), rgba(7,12,9,0.82)), url('/images/s.jpg') center/cover no-repeat;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
     #splash-screen.splash-hide {
