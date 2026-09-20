@@ -216,6 +216,11 @@
                 await Task.Delay(1500);
                 Navigation.NavigateTo("browse-jobs");
             }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                errorMessage = await ReadServerMessageAsync(response)
+                               ?? "This job looks like a duplicate of one you already posted.";
+            }
             else
             {
                 errorMessage = "Could not post the job. Please check your details and try again.";
@@ -229,6 +234,24 @@
         {
             isSubmitting = false;
         }
+    }
+
+    private static async Task<string?> ReadServerMessageAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<ServerMessage>();
+            return string.IsNullOrWhiteSpace(body?.Message) ? null : body!.Message;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private class ServerMessage
+    {
+        public string Message { get; set; } = "";
     }
 
     public class PostJobModel

@@ -173,6 +173,28 @@ public class JobsController : ApiControllerBase
     {
         var (isFraud, reason) = FraudDetector.EvaluateJob(request.Title, request.Description);
 
+        var duplicate = await DuplicateJobDetector.CheckAsync(
+            _db, CurrentUserId, request.Title, request.Company, request.Location, request.Description);
+
+        // Same account, same job still open -> block it (usually a double click or an accidental re-post).
+        if (duplicate.SameOwnerJobId is int existingJobId)
+        {
+            return Conflict(new
+            {
+                message = $"You already have an open job with the same title, company and location (job #{existingJobId}). " +
+                          "Close or delete it first if you want to post it again."
+            });
+        }
+
+        // Another account posted the same text -> let it through, but flag it so an admin reviews it.
+        if (duplicate.OtherOwnerJobId is int otherJobId)
+        {
+            isFraud = true;
+            reason = string.IsNullOrEmpty(reason)
+                ? $"Possible duplicate of job #{otherJobId} posted by another account."
+                : $"{reason}; possible duplicate of job #{otherJobId} posted by another account.";
+        }
+
         var job = new Job
         {
             Title = request.Title,
