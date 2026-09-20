@@ -28,7 +28,7 @@
                         <span>@Loc.T("nav_jobs")</span>
                     </a>
                 </li>
-                @if (AuthState.CanAccess("Employer"))
+                @if (AuthState.Role == "Employer")
                 {
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="employer">
@@ -37,7 +37,7 @@
                         </a>
                     </li>
                 }
-                @if (AuthState.CanAccess("Worker"))
+                @if (AuthState.Role == "Worker")
                 {
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="worker">
