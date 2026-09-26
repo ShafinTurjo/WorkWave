@@ -68,7 +68,7 @@
     }
 body {
     background-color: #0b1410;
-    background-image: linear-gradient(rgba(7,12,9,0.72), rgba(7,12,9,0.72)), url('/images/site-bg.jpg');
+    background-image: linear-gradient(rgba(7,12,9,0.72), rgba(7,12,9,0.72)), url('/images/site-bg.jpeg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -88,7 +88,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, rgba(79,70,229,0.88) 0%, rgba(67,56,202,0.88) 55%, rgba(14,165,233,0.85) 100%), url('/images/s.jpg') center/cover no-repeat;
+    background: linear-gradient(135deg, rgba(79,70,229,0.88) 0%, rgba(67,56,202,0.88) 55%, rgba(14,165,233,0.85) 100%), url('/images/s.jpeg') center/cover no-repeat;
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
     #splash-screen.splash-hide {
