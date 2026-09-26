@@ -5,6 +5,8 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject AuthStateService AuthState
+@inject LocalizationService Loc
+@implements IDisposable
 
 <div class="bg-light-subtle min-vh-100 py-5">
     <div class="container" style="max-width: 760px;">
@@ -12,19 +14,19 @@
         <!-- Header -->
         <div class="text-center mb-4">
             <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-2">
-                <i class="bi bi-building-add me-1"></i> Employers Hub
+                <i class="bi bi-building-add me-1"></i> @Loc.T("badge_employers_hub")
             </span>
-            <h2 class="fw-extrabold text-white display-6">Post a New Job Opening</h2>
-            <p class="text-white-50 fs-6">Fill out the form below to publish your job position.</p>
+            <h2 class="fw-extrabold text-white display-6">@Loc.T("post_job_title")</h2>
+            <p class="text-white-50 fs-6">@Loc.T("post_job_subtitle")</p>
         </div>
 
-                @if (!AuthState.IsLoggedIn)
+        @if (!AuthState.IsLoggedIn)
         {
             <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center" role="alert">
                 <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
                 <div>
-                    <h6 class="fw-bold mb-0">Please login first</h6>
-                    <small>You need an account to post a job. <a href="login">Login here</a>.</small>
+                    <h6 class="fw-bold mb-0">@Loc.T("please_login_first")</h6>
+                    <small>@Loc.T("msg_need_account_post") <a href="login">@Loc.T("link_login_here")</a>.</small>
                 </div>
             </div>
         }
@@ -33,8 +35,8 @@
             <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex align-items-center" role="alert">
                 <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
                 <div>
-                    <h6 class="fw-bold mb-0">Employer accounts only</h6>
-                    <small>Only Employer accounts can post jobs. <a href="worker">Go to your dashboard</a>.</small>
+                    <h6 class="fw-bold mb-0">@Loc.T("employer_accounts_only")</h6>
+                    <small>@Loc.T("msg_employer_only") <a href="worker">@Loc.T("link_go_dashboard")</a>.</small>
                 </div>
             </div>
         }
@@ -51,8 +53,8 @@
                 <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
                     <i class="bi bi-check-circle-fill fs-4 me-3 text-success"></i>
                     <div>
-                        <h6 class="fw-bold mb-0">Job Posted Successfully!</h6>
-                        <small>Redirecting you to job listings...</small>
+                        <h6 class="fw-bold mb-0">@Loc.T("job_posted_success")</h6>
+                        <small>@Loc.T("redirecting_msg")</small>
                     </div>
                 </div>
             }
@@ -64,21 +66,21 @@
 
                     <!-- Job Title -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark small">Job Title <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_job_title") <span class="text-danger">*</span></label>
                         <input type="text" class="form-control form-control-lg custom-input" @bind-value="newJob.Title" required />
                     </div>
 
                     <div class="row g-3 mb-3">
                         <!-- Company Name -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Company Name <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_company_name") <span class="text-danger">*</span></label>
                             <input type="text" class="form-control custom-input" @bind-value="newJob.Company" required />
                         </div>
                         <!-- Category -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Category <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("job_category") <span class="text-danger">*</span></label>
                             <select class="form-select custom-input" @bind="newJob.Category" required>
-                                <option value="">Select Category</option>
+                                <option value="">@Loc.T("select_category")</option>
                                 <option value="IT & Software">IT & Software</option>
                                 <option value="Customer Support">Customer Support</option>
                                 <option value="Sales & Marketing">Sales & Marketing</option>
@@ -91,12 +93,12 @@
                     <div class="row g-3 mb-3">
                         <!-- Location -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Location <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_location") <span class="text-danger">*</span></label>
                             <input type="text" class="form-control custom-input" @bind-value="newJob.Location" required />
                         </div>
                         <!-- Salary Range -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Salary Range <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_salary_range") <span class="text-danger">*</span></label>
                             <input type="text" class="form-control custom-input" @bind-value="newJob.Salary" required />
                         </div>
                     </div>
@@ -104,7 +106,7 @@
                     <div class="row g-3 mb-3">
                         <!-- Job Type -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Job Type <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_job_type") <span class="text-danger">*</span></label>
                             <select class="form-select custom-input" @bind="newJob.JobType" required>
                                 <option value="Full-Time">Full-Time</option>
                                 <option value="Part-Time">Part-Time</option>
@@ -114,22 +116,22 @@
                         </div>
                         <!-- Skills / Tags -->
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark small">Key Skills / Tags</label>
-                            <input type="text" class="form-control custom-input" placeholder="Comma-separated, e.g. C#, Blazor" @bind-value="tagsInput" />
+                            <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_key_skills")</label>
+                            <input type="text" class="form-control custom-input" placeholder="@Loc.T("skills_placeholder")" @bind-value="tagsInput" />
                         </div>
                     </div>
 
                     <!-- Description -->
                     <div class="mb-4">
-                        <label class="form-label fw-semibold text-dark small">Job Description & Requirements <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold text-dark small">@Loc.T("lbl_job_description") <span class="text-danger">*</span></label>
                         <textarea class="form-control custom-input" rows="5" @bind="newJob.Description" required></textarea>
                     </div>
 
                     <!-- Submit Button -->
                     <div class="d-flex justify-content-end gap-3 pt-2">
-                        <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 border" @onclick='() => Navigation.NavigateTo("browse-jobs")'>Cancel</button>
+                        <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 border" @onclick='() => Navigation.NavigateTo("browse-jobs")'>@Loc.T("btn_cancel")</button>
                         <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" disabled="@isSubmitting">
-                            <i class="bi bi-send-check me-1"></i> @(isSubmitting ? "Publishing..." : "Publish Job")
+                            <i class="bi bi-send-check me-1"></i> @(isSubmitting ? Loc.T("btn_publishing") : Loc.T("btn_publish_job"))
                         </button>
                     </div>
                 </EditForm>
@@ -178,13 +180,15 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthState.InitializeAsync();
+        await Loc.InitializeAsync();
+        Loc.OnChange += StateHasChanged;
     }
 
     private async Task HandleSubmit()
     {
         if (!AuthState.IsLoggedIn || AuthState.UserId is null)
         {
-            errorMessage = "You must be logged in to post a job.";
+            errorMessage = Loc.T("err_must_login_post");
             return;
         }
 
@@ -219,16 +223,16 @@
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
                 errorMessage = await ReadServerMessageAsync(response)
-                               ?? "This job looks like a duplicate of one you already posted.";
+                               ?? Loc.T("err_duplicate_job");
             }
             else
             {
-                errorMessage = "Could not post the job. Please check your details and try again.";
+                errorMessage = Loc.T("err_post_job_failed");
             }
         }
         catch (Exception)
         {
-            errorMessage = "Could not reach the server. Please try again.";
+            errorMessage = Loc.T("err_server_unreachable");
         }
         finally
         {
@@ -263,5 +267,10 @@
         public string Salary { get; set; } = "";
         public string JobType { get; set; } = "Full-Time";
         public string Description { get; set; } = "";
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 }
