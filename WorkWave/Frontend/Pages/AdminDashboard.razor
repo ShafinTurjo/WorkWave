@@ -5,6 +5,8 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LocalizationService Loc
+@implements IDisposable
 
 <style>
     .dashboard-container {
@@ -235,7 +237,7 @@
     {
         <div class="d-flex justify-content-center align-items-center py-5">
             <div class="spinner-border text-primary me-2" role="status"></div>
-            <span class="fs-5 text-muted">Checking access rights...</span>
+            <span class="fs-5 text-muted">@Loc.T("checking_access_rights")</span>
         </div>
     }
     else
@@ -243,12 +245,12 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start mb-4">
             <div>
-                <h2 class="fw-bold mb-1 fs-3 text-white">Admin dashboard</h2>
-                <p class="text-white-50 small mb-0">System management and overview</p>
+                <h2 class="fw-bold mb-1 fs-3 text-white">@Loc.T("admin_dashboard_title")</h2>
+                <p class="text-white-50 small mb-0">@Loc.T("admin_dashboard_subtitle")</p>
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-export d-flex align-items-center gap-2" @onclick="ExportUsersToCsv">
-                    <i class="bi bi-download"></i> Export CSV
+                    <i class="bi bi-download"></i> @Loc.T("export_csv")
                 </button>
                 <button class="btn btn-icon" @onclick="RefreshAllData" title="Refresh Dashboard">
                     <i class="bi bi-arrow-clockwise"></i>
@@ -268,32 +270,32 @@
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="stat-box card-panel">
-                    <div class="stat-title">Total users (all time)</div>
+                    <div class="stat-title">@Loc.T("stat_total_users")</div>
                     <div class="stat-number">@stats.TotalUsers</div>
                     <div class="stat-sub text-success-custom">
-                        <i class="bi bi-arrow-up-right me-1"></i>@stats.NewUsersThisWeek new this week
+                        <i class="bi bi-arrow-up-right me-1"></i>@stats.NewUsersThisWeek @Loc.T("new_this_week")
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-box card-panel">
-                    <div class="stat-title">Posted jobs (all time)</div>
+                    <div class="stat-title">@Loc.T("stat_posted_jobs")</div>
                     <div class="stat-number">@stats.TotalJobs</div>
-                    <div class="stat-sub text-muted">@stats.ActiveJobs currently active</div>
+                    <div class="stat-sub text-muted">@stats.ActiveJobs @Loc.T("currently_active")</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-box card-panel">
-                    <div class="stat-title">Applications (all time)</div>
+                    <div class="stat-title">@Loc.T("stat_applications_alltime")</div>
                     <div class="stat-number">@stats.TotalApplications</div>
-                    <div class="stat-sub text-warning-custom">@stats.PendingApplications pending review</div>
+                    <div class="stat-sub text-warning-custom">@stats.PendingApplications @Loc.T("pending_review")</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-box card-panel">
-                    <div class="stat-title">Flagged content</div>
+                    <div class="stat-title">@Loc.T("stat_flagged_content")</div>
                     <div class="stat-number text-danger">@stats.FlaggedContent</div>
-                    <div class="stat-sub text-muted">@flaggedJobs.Count pending review</div>
+                    <div class="stat-sub text-muted">@flaggedJobs.Count @Loc.T("pending_review")</div>
                 </div>
             </div>
         </div>
@@ -302,10 +304,10 @@
         <div class="row g-3 mb-4">
             <div class="col-md-6">
                 <div class="card-panel h-100">
-                    <h6 class="fw-bold text-dark mb-3 fs-6">New signups per day, last 7 days</h6>
+                    <h6 class="fw-bold text-dark mb-3 fs-6">@Loc.T("chart_new_signups")</h6>
                     <div class="chart-bar-container">
                         @{
-                            var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                            var days = new[] { Loc.T("day_mon"), Loc.T("day_tue"), Loc.T("day_wed"), Loc.T("day_thu"), Loc.T("day_fri"), Loc.T("day_sat"), Loc.T("day_sun") };
                             var signups = stats.DailySignups ?? new int[7];
                             int maxSignups = signups.Max() > 0 ? signups.Max() : 1;
                         }
@@ -325,7 +327,7 @@
             </div>
             <div class="col-md-6">
                 <div class="card-panel h-100">
-                    <h6 class="fw-bold text-dark mb-3 fs-6">Recent activity</h6>
+                    <h6 class="fw-bold text-dark mb-3 fs-6">@Loc.T("chart_recent_activity")</h6>
                     <div class="d-flex flex-column gap-1">
                         @if (stats.RecentActivities != null && stats.RecentActivities.Any())
                         {
@@ -339,7 +341,7 @@
                         }
                         else
                         {
-                            <div class="text-muted small py-2">No recent activity recorded.</div>
+                            <div class="text-muted small py-2">@Loc.T("no_recent_activity")</div>
                         }
                     </div>
                 </div>
@@ -350,22 +352,22 @@
         <ul class="nav nav-tabs-custom">
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "users" ? "active" : "")" @onclick='() => activeTab = "users"'>
-                    <i class="bi bi-people me-1"></i> Users (@users.Count)
+                    <i class="bi bi-people me-1"></i> @Loc.T("tab_users") (@users.Count)
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "jobs" ? "active" : "")" @onclick='() => activeTab = "jobs"'>
-                    <i class="bi bi-briefcase me-1"></i> Jobs (@jobs.Count)
+                    <i class="bi bi-briefcase me-1"></i> @Loc.T("tab_jobs") (@jobs.Count)
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "applications" ? "active" : "")" @onclick='() => activeTab = "applications"'>
-                    <i class="bi bi-file-earmark-text me-1"></i> Applications (@applications.Count)
+                    <i class="bi bi-file-earmark-text me-1"></i> @Loc.T("tab_applications") (@applications.Count)
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link @(activeTab == "reports" ? "active" : "")" @onclick='() => activeTab = "reports"'>
-                    <i class="bi bi-flag me-1"></i> Reports (@flaggedJobs.Count)
+                    <i class="bi bi-flag me-1"></i> @Loc.T("tab_reports") (@flaggedJobs.Count)
                 </button>
             </li>
         </ul>
@@ -375,19 +377,19 @@
         {
             <div class="card-panel p-0">
                 <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                    <span class="fw-bold text-dark fs-6">Registered users (@FilteredUsers.Count)</span>
+                    <span class="fw-bold text-dark fs-6">@Loc.T("registered_users") (@FilteredUsers.Count)</span>
                     <div class="input-group input-group-sm" style="max-width: 260px;">
-                        <input type="text" class="form-control rounded-2 bg-light border-0" placeholder="Search name or email" @bind="userSearchTerm" @bind:event="oninput" />
+                        <input type="text" class="form-control rounded-2 bg-light border-0" placeholder="@Loc.T("search_name_email_placeholder")" @bind="userSearchTerm" @bind:event="oninput" />
                     </div>
                 </div>
 
                 @if (loadingUsers)
                 {
-                    <div class="p-4 text-center text-muted">Loading users...</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("loading_users")</div>
                 }
                 else if (!FilteredUsers.Any())
                 {
-                    <div class="p-4 text-center text-muted">No users found matching your search.</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("no_users_found")</div>
                 }
                 else
                 {
@@ -395,12 +397,12 @@
                         <table class="table table-custom align-middle">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Status</th>
-                                    <th>Joined</th>
-                                    <th class="text-end">Actions</th>
+                                    <th>@Loc.T("th_name")</th>
+                                    <th>@Loc.T("th_email")</th>
+                                    <th>@Loc.T("th_role")</th>
+                                    <th>@Loc.T("th_status")</th>
+                                    <th>@Loc.T("th_joined")</th>
+                                    <th class="text-end">@Loc.T("th_actions")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -419,7 +421,7 @@
                                         <td class="text-end">
                                             @if (u.Id == AuthState.UserId)
                                             {
-                                                <span class="text-muted small">You</span>
+                                                <span class="text-muted small">@Loc.T("you_label")</span>
                                             }
                                             else
                                             {
@@ -439,14 +441,14 @@
         else if (activeTab == "jobs")
         {
             <div class="card-panel p-0">
-                <div class="p-3 border-bottom fw-bold text-dark fs-6">Job Postings (@jobs.Count)</div>
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">@Loc.T("job_postings") (@jobs.Count)</div>
                 @if (loadingJobs)
                 {
-                    <div class="p-4 text-center text-muted">Loading jobs...</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("msg_loading_jobs")</div>
                 }
                 else if (!jobs.Any())
                 {
-                    <div class="p-4 text-center text-muted">No job postings found.</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("no_job_postings")</div>
                 }
                 else
                 {
@@ -454,10 +456,10 @@
                         <table class="table table-custom align-middle">
                             <thead>
                                 <tr>
-                                    <th>Job Title</th>
-                                    <th>Company</th>
-                                    <th>Posted Date</th>
-                                    <th class="text-end">Action</th>
+                                    <th>@Loc.T("th_job_title")</th>
+                                    <th>@Loc.T("th_company")</th>
+                                    <th>@Loc.T("th_posted_date")</th>
+                                    <th class="text-end">@Loc.T("th_action")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -483,14 +485,14 @@
         else if (activeTab == "applications")
         {
             <div class="card-panel p-0">
-                <div class="p-3 border-bottom fw-bold text-dark fs-6">Applications (@applications.Count)</div>
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">@Loc.T("applications_tab_title") (@applications.Count)</div>
                 @if (loadingApplications)
                 {
-                    <div class="p-4 text-center text-muted">Loading applications...</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("loading_applications")</div>
                 }
                 else if (!applications.Any())
                 {
-                    <div class="p-4 text-center text-muted">No applications found.</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("no_applications_found")</div>
                 }
                 else
                 {
@@ -498,11 +500,11 @@
                         <table class="table table-custom align-middle">
                             <thead>
                                 <tr>
-                                    <th>Job Title</th>
-                                    <th>Applicant</th>
-                                    <th>Email</th>
-                                    <th>Applied Date</th>
-                                    <th class="text-end">Action</th>
+                                    <th>@Loc.T("th_job_title")</th>
+                                    <th>@Loc.T("th_applicant")</th>
+                                    <th>@Loc.T("th_email")</th>
+                                    <th>@Loc.T("th_applied_date")</th>
+                                    <th class="text-end">@Loc.T("th_action")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -529,17 +531,17 @@
         else if (activeTab == "reports")
         {
             <div class="card-panel p-0">
-                <div class="p-3 border-bottom fw-bold text-dark fs-6">Flagged Jobs & User Reports (@flaggedJobs.Count)</div>
+                <div class="p-3 border-bottom fw-bold text-dark fs-6">@Loc.T("flagged_jobs_title") (@flaggedJobs.Count)</div>
 
                 @if (loadingFlaggedJobs)
                 {
-                    <div class="p-4 text-center text-muted">Loading reported jobs...</div>
+                    <div class="p-4 text-center text-muted">@Loc.T("loading_reported_jobs")</div>
                 }
                 else if (!flaggedJobs.Any())
                 {
                     <div class="p-4 text-center text-muted">
                         <i class="bi bi-shield-check fs-2 text-success"></i>
-                        <p class="mt-2 mb-0">No flagged content or reports to review.</p>
+                        <p class="mt-2 mb-0">@Loc.T("no_flagged_content")</p>
                     </div>
                 }
                 else
@@ -548,11 +550,11 @@
                         <table class="table table-custom align-middle">
                             <thead>
                                 <tr>
-                                    <th>Job Title</th>
-                                    <th>Company</th>
-                                    <th>Flag Reason</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Actions</th>
+                                    <th>@Loc.T("th_job_title")</th>
+                                    <th>@Loc.T("th_company")</th>
+                                    <th>@Loc.T("th_flag_reason")</th>
+                                    <th>@Loc.T("th_status")</th>
+                                    <th class="text-end">@Loc.T("th_actions")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -564,7 +566,7 @@
                                         <td>
                                             <span class="badge bg-danger-subtle px-2 py-1 rounded-2 badge-flag-reason" title="@fj.FlagReason">
                                                 <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                                @(string.IsNullOrEmpty(fj.FlagReason) ? "Suspicious Activity" : fj.FlagReason)
+                                                @(string.IsNullOrEmpty(fj.FlagReason) ? Loc.T("suspicious_activity") : fj.FlagReason)
                                             </span>
                                         </td>
                                         <td>
@@ -573,10 +575,10 @@
                                         <td class="text-end">
                                             <div class="action-buttons-group">
                                                 <button class="btn btn-success btn-sm px-2 py-1 rounded-2 fw-semibold" style="font-size: 0.75rem;" @onclick="() => ReviewJob(fj.Id, true)" title="Approve Job">
-                                                    <i class="bi bi-check-lg"></i> Approve
+                                                    <i class="bi bi-check-lg"></i> @Loc.T("approve")
                                                 </button>
                                                 <button class="btn btn-danger btn-sm px-2 py-1 rounded-2 fw-semibold" style="font-size: 0.75rem;" @onclick="() => ReviewJob(fj.Id, false)" title="Remove Job">
-                                                    <i class="bi bi-trash"></i> Remove
+                                                    <i class="bi bi-trash"></i> @Loc.T("remove")
                                                 </button>
                                             </div>
                                         </td>
@@ -616,6 +618,8 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthState.InitializeAsync();
+        await Loc.InitializeAsync();
+        Loc.OnChange += StateHasChanged;
 
         if (!AuthState.IsLoggedIn || !AuthState.IsAdmin)
         {
@@ -645,7 +649,7 @@
             var result = await Http.GetFromJsonAsync<StatsModel>($"api/admin/stats?adminUserId={AuthState.UserId}");
             if (result is not null) stats = result;
         }
-        catch (Exception) { errorMessage = "Could not load dashboard statistics."; }
+        catch (Exception) { errorMessage = Loc.T("err_load_stats"); }
     }
 
     private async Task LoadUsers()
@@ -656,7 +660,7 @@
             var result = await Http.GetFromJsonAsync<List<UserItem>>($"api/admin/users?adminUserId={AuthState.UserId}");
             if (result is not null) users = result;
         }
-        catch (Exception) { errorMessage = "Could not load users."; }
+        catch (Exception) { errorMessage = Loc.T("err_load_users"); }
         finally { loadingUsers = false; }
     }
 
@@ -708,12 +712,12 @@
                 await LoadJobs();
             }
         }
-        catch (Exception) { errorMessage = "Failed to review the job."; }
+        catch (Exception) { errorMessage = Loc.T("err_review_job"); }
     }
 
     private async Task DeleteUser(int userId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this user?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc.T("confirm_delete_user"));
         if (!confirmed) return;
 
         try
@@ -725,12 +729,12 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Failed to delete user."; }
+        catch (Exception) { errorMessage = Loc.T("err_delete_user"); }
     }
 
     private async Task DeleteJob(int jobId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this job?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc.T("confirm_delete_job"));
         if (!confirmed) return;
 
         try
@@ -742,12 +746,12 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Failed to delete job."; }
+        catch (Exception) { errorMessage = Loc.T("err_delete_job_admin"); }
     }
 
     private async Task DeleteApplication(int appId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this application?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc.T("confirm_delete_application"));
         if (!confirmed) return;
 
         try
@@ -759,7 +763,7 @@
                 await LoadStats();
             }
         }
-        catch (Exception) { errorMessage = "Failed to delete application."; }
+        catch (Exception) { errorMessage = Loc.T("err_delete_application"); }
     }
 
     private string GetRoleBadgeClass(string role) => role switch
@@ -840,5 +844,10 @@
         public string Company { get; set; } = "";
         public string? FlagReason { get; set; }
         public string Status { get; set; } = "Pending Review";
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 }
