@@ -5,35 +5,37 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject LocalizationService Loc
+@implements IDisposable
 
 <div class="container mt-4 mb-5">
     @if (!authorized)
     {
-        <div class="alert alert-warning border-0 shadow-sm">Checking access...</div>
+        <div class="alert alert-warning border-0 shadow-sm">@Loc.T("checking_access")</div>
     }
     else
     {
-        
+
         <div class="d-flex justify-content-between align-items-center p-3 bg-white shadow-sm rounded mb-4 border-start border-4 border-primary">
             <div>
-                <h4 class="mb-1 text-primary fw-bold">Welcome back, @(string.IsNullOrWhiteSpace(AuthState.FullName) ? "Worker" : AuthState.FullName)! 👋</h4>
-                <p class="text-muted mb-0 small">Track your job applications, manage your CV, and update your profile.</p>
+                <h4 class="mb-1 text-primary fw-bold">@Loc.T("worker_welcome_back") @(string.IsNullOrWhiteSpace(AuthState.FullName) ? Loc.T("default_worker_name") : AuthState.FullName)! 👋</h4>
+                <p class="text-muted mb-0 small">@Loc.T("worker_dashboard_subtitle")</p>
             </div>
             <div>
                 <a href="browse-jobs" class="btn btn-primary btn-sm">
-                    <i class="bi bi-briefcase me-1"></i> Browse Jobs
+                    <i class="bi bi-briefcase me-1"></i> @Loc.T("nav_jobs")
                 </a>
             </div>
         </div>
 
         
         <div class="row g-3 mb-4">
-            
+
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3 text-center bg-white h-100">
                     <div class="text-primary fs-3 mb-1">📋</div>
                     <h5 class="fw-bold mb-0">@applications.Count</h5>
-                    <small class="text-muted">Jobs Applied</small>
+                    <small class="text-muted">@Loc.T("jobs_applied")</small>
                 </div>
             </div>
 
@@ -41,25 +43,25 @@
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3 text-center bg-white h-100">
                     <div class="text-success fs-3 mb-1">📄</div>
-                    <h5 class="fw-bold mb-0">@(hasResume ? "Active" : "Not Built")</h5>
-                    <small class="text-muted">CV Status</small>
+                    <h5 class="fw-bold mb-0">@(hasResume ? Loc.T("cv_active") : Loc.T("cv_not_built"))</h5>
+                    <small class="text-muted">@Loc.T("cv_status")</small>
                 </div>
             </div>
 
             
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm p-3 text-center bg-white h-100 d-flex flex-column justify-content-center align-items-center">
-                    <h6 class="fw-bold mb-2">My CV</h6>
+                    <h6 class="fw-bold mb-2">@Loc.T("my_cv")</h6>
                     @if (hasResume)
                     {
                         <a href="cv-generator" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="bi bi-pencil-square me-1"></i> Build / Edit CV
+                            <i class="bi bi-pencil-square me-1"></i> @Loc.T("build_edit_cv")
                         </a>
                     }
                     else
                     {
                         <a href="cv-generator" class="btn btn-primary btn-sm w-100">
-                            <i class="bi bi-plus-circle me-1"></i> Build / Edit CV
+                            <i class="bi bi-plus-circle me-1"></i> @Loc.T("build_edit_cv")
                         </a>
                     }
                 </div>
@@ -68,26 +70,26 @@
 
         
         <div class="row g-4">
-            
+
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-card-checklist me-1 text-primary"></i> My Applications</span>
-                        <span class="badge bg-light text-dark fw-normal">Total: @applications.Count</span>
+                        <span><i class="bi bi-card-checklist me-1 text-primary"></i> @Loc.T("my_applications")</span>
+                        <span class="badge bg-light text-dark fw-normal">@Loc.T("total_label") @applications.Count</span>
                     </div>
                     <div class="card-body">
                         @if (loading)
                         {
                             <div class="text-center py-4">
                                 <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
-                                <span class="ms-2 text-muted">Loading applications...</span>
+                                <span class="ms-2 text-muted">@Loc.T("loading_applications_worker")</span>
                             </div>
                         }
                         else if (applications.Count == 0)
                         {
                             <div class="text-center py-4 text-muted">
-                                <p class="mb-2">You haven't applied to any jobs yet.</p>
-                                <a href="browse-jobs" class="btn btn-sm btn-outline-primary">Find a Job Now</a>
+                                <p class="mb-2">@Loc.T("no_applications_worker")</p>
+                                <a href="browse-jobs" class="btn btn-sm btn-outline-primary">@Loc.T("find_job_now")</a>
                             </div>
                         }
                         else
@@ -96,11 +98,11 @@
                                 <table class="table align-middle table-hover">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Job Title</th>
-                                            <th>Applied On</th>
-                                            <th>Match Score</th> 
-                                            <th>Status</th>
-                                            <th class="text-end">Action</th>
+                                            <th>@Loc.T("th_job_title")</th>
+                                            <th>@Loc.T("th_applied_on")</th>
+                                            <th>@Loc.T("th_match_score")</th>
+                                            <th>@Loc.T("th_status")</th>
+                                            <th class="text-end">@Loc.T("th_action")</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -126,10 +128,10 @@
                                                     <span class="badge @StatusBadgeClass(app.Status)">@app.Status</span>
                                                 </td>
                                                 <td class="text-end">
-                                                    <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">View Job</a>
+                                                    <a class="btn btn-sm btn-outline-primary" href="@($"job/{app.JobId}")">@Loc.T("view_job")</a>
                                                     @if (!string.IsNullOrEmpty(app.ResumeUrl))
                                                     {
-                                                        <a class="btn btn-sm btn-outline-secondary ms-1" href="@app.ResumeUrl" target="_blank" rel="noopener">My CV</a>
+                                                        <a class="btn btn-sm btn-outline-secondary ms-1" href="@app.ResumeUrl" target="_blank" rel="noopener">@Loc.T("my_cv")</a>
                                                     }
                                                 </td>
                                             </tr>
@@ -145,11 +147,11 @@
        
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm p-4 bg-white">
-                    <h5 class="fw-bold mb-3">Profile Info</h5>
+                    <h5 class="fw-bold mb-3">@Loc.T("profile_info")</h5>
                     <div class="small">
-                        <p class="mb-2"><strong>Name:</strong> @(AuthState.FullName ?? "N/A")</p>
-                        <p class="mb-2"><strong>Email:</strong> @(AuthState.Email ?? "N/A")</p>
-                        <p class="mb-0"><strong>Role:</strong> <span class="badge bg-secondary-subtle text-secondary">Worker</span></p>
+                        <p class="mb-2"><strong>@Loc.T("lbl_name")</strong> @(AuthState.FullName ?? Loc.T("not_available"))</p>
+                        <p class="mb-2"><strong>@Loc.T("lbl_email_field")</strong> @(AuthState.Email ?? Loc.T("not_available"))</p>
+                        <p class="mb-0"><strong>@Loc.T("lbl_role_field")</strong> <span class="badge bg-secondary-subtle text-secondary">@Loc.T("role_worker_badge")</span></p>
                     </div>
                 </div>
             </div>
@@ -166,6 +168,8 @@
     protected override async Task OnInitializedAsync()
     {
         await AuthState.InitializeAsync();
+        await Loc.InitializeAsync();
+        Loc.OnChange += StateHasChanged;
 
         if (!AuthState.IsLoggedIn)
         {
@@ -183,7 +187,7 @@
 
         try
         {
-            
+
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/applications/user/{AuthState.UserId}");
             if (result is not null) applications = result;
 
@@ -196,7 +200,7 @@
         }
         catch (Exception)
         {
-           
+
         }
         finally
         {
@@ -240,5 +244,10 @@
         public string? ResumeUrl { get; set; }
 
         public int MatchScore { get; set; } = 0;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 }
