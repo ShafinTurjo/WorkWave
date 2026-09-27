@@ -243,6 +243,21 @@ public static class Translations
             ["lbl_role_field"] = "Role:",
             ["not_available"] = "N/A",
             ["role_worker_badge"] = "Worker",
+
+            // Job Details page
+            ["msg_loading_job"] = "Loading job...",
+            ["job_not_found_title"] = "Job not found",
+            ["back_to_jobs"] = "Back to Jobs",
+            ["btn_report"] = "Report",
+            ["report_modal_title"] = "Report Fake or Suspicious Job",
+            ["report_submitted_msg"] = "Report submitted successfully! Admin will review this post.",
+            ["report_reason_prompt"] = "Please state the reason why you are reporting this job (e.g. Asking for money, Fake company, Telegram/WhatsApp scam).",
+            ["report_reason_placeholder"] = "Enter reason...",
+            ["submit_report"] = "Submit Report",
+            ["btn_close"] = "Close",
+            ["job_description_lbl"] = "Job Description",
+            ["skills_tags_lbl"] = "Skills / Tags",
+            ["btn_back"] = "Back",
         },
         ["bn"] = new()
         {
@@ -483,6 +498,21 @@ public static class Translations
             ["lbl_role_field"] = "রোল:",
             ["not_available"] = "নেই",
             ["role_worker_badge"] = "ওয়ার্কার",
+
+            // Job Details page
+            ["msg_loading_job"] = "জব লোড হচ্ছে...",
+            ["job_not_found_title"] = "জব পাওয়া যায়নি",
+            ["back_to_jobs"] = "জব পেজে ফিরে যান",
+            ["btn_report"] = "রিপোর্ট করুন",
+            ["report_modal_title"] = "ভুয়া বা সন্দেহজনক জব রিপোর্ট করুন",
+            ["report_submitted_msg"] = "রিপোর্ট সফলভাবে জমা দেওয়া হয়েছে! অ্যাডমিন এই পোস্টটি পর্যালোচনা করবেন।",
+            ["report_reason_prompt"] = "আপনি কেন এই জবটি রিপোর্ট করছেন তার কারণ লিখুন (যেমন টাকা চাওয়া, ভুয়া কোম্পানি, টেলিগ্রাম/হোয়াটসঅ্যাপ স্ক্যাম)।",
+            ["report_reason_placeholder"] = "কারণ লিখুন...",
+            ["submit_report"] = "রিপোর্ট জমা দিন",
+            ["btn_close"] = "বন্ধ করুন",
+            ["job_description_lbl"] = "জব বর্ণনা",
+            ["skills_tags_lbl"] = "স্কিল / ট্যাগ",
+            ["btn_back"] = "পেছনে যান",
         }
     };
 }
