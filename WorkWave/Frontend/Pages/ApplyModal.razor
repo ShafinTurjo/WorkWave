@@ -2,6 +2,7 @@
 @using Frontend.Services
 @inject HttpClient Http
 @inject AuthStateService AuthState
+@implements IDisposable
 
 @if (SelectedJob != null)
 {
@@ -10,8 +11,8 @@
             <div class="modal-content border-0 rounded-4 p-3 shadow-lg">
                 <div class="modal-header border-0 pb-1">
                     <div>
-                        <h4 class="modal-title fw-bold text-dark tracking-tight">Apply for @SelectedJob.Title</h4>
-                        <p class="text-muted small mb-0">Company: <span class="fw-semibold text-primary">@SelectedJob.Company</span></p>
+                        <h4 class="modal-title fw-bold text-dark tracking-tight">@Loc.T("apply_for_prefix") @SelectedJob.Title</h4>
+                        <p class="text-muted small mb-0">@Loc.T("company_label") <span class="fw-semibold text-primary">@SelectedJob.Company</span></p>
                     </div>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
@@ -19,7 +20,7 @@
                 <div class="modal-body py-3">
                     @if (!AuthState.IsLoggedIn)
                     {
-                        <div class="alert alert-warning">You need to <a href="login">log in</a> as a Worker to apply.</div>
+                        <div class="alert alert-warning">@Loc.T("need_login_to_apply") <a href="login">@Loc.T("log_in_lowercase")</a> @Loc.T("as_worker_to_apply")</div>
                     }
                     else
                     {
@@ -30,19 +31,19 @@
                         <form>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
+                                    <label class="form-label fw-semibold text-secondary small mb-1">@Loc.T("lbl_full_name")</label>
                                     <input type="text" class="form-control custom-input" @bind="fullName" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">Email Address</label>
+                                    <label class="form-label fw-semibold text-secondary small mb-1">@Loc.T("lbl_email")</label>
                                     <input type="email" class="form-control custom-input" @bind="email" />
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">Cover Letter / Note to Recruiter</label>
+                                    <label class="form-label fw-semibold text-secondary small mb-1">@Loc.T("cover_letter_lbl")</label>
                                     <textarea class="form-control custom-input" rows="4" @bind="coverLetter"></textarea>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">CV / Resume (PDF, max 5 MB)</label>
+                                    <label class="form-label fw-semibold text-secondary small mb-1">@Loc.T("cv_resume_pdf_lbl")</label>
                                     <InputFile OnChange="OnResumeSelected" accept=".pdf" class="form-control custom-input" />
                                     @if (resumeFile != null)
                                     {
@@ -61,11 +62,11 @@
                 </div>
 
                 <div class="modal-footer border-0 pt-2">
-                    <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 text-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 text-secondary" @onclick="CloseModal">@Loc.T("btn_cancel")</button>
                     @if (AuthState.IsLoggedIn)
                     {
                         <button type="button" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" disabled="@isSubmitting" @onclick="SubmitModal">
-                            <i class="bi bi-send-fill me-2"></i>@(isSubmitting ? "Submitting..." : "Submit Application")
+                            <i class="bi bi-send-fill me-2"></i>@(isSubmitting ? Loc.T("btn_submitting") : Loc.T("submit_application"))
                         </button>
                     }
                 </div>
@@ -110,6 +111,11 @@
     private bool isSubmitting = false;
     private string? errorMessage;
 
+    protected override void OnInitialized()
+    {
+        Loc.OnChange += StateHasChanged;
+    }
+
     protected override void OnParametersSet()
     {
         if (SelectedJob != null)
@@ -131,13 +137,13 @@
 
         if (file.ContentType != "application/pdf" && !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
         {
-            resumeError = "Please choose a PDF file.";
+            resumeError = Loc.T("resume_pdf_only_err");
             return;
         }
 
         if (file.Size > MaxResumeSizeBytes)
         {
-            resumeError = "File is too large. Max size is 5 MB.";
+            resumeError = Loc.T("resume_too_large_err");
             return;
         }
 
@@ -156,7 +162,7 @@
 
         if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email))
         {
-            errorMessage = "Please fill in your name and email.";
+            errorMessage = Loc.T("err_fill_name_email");
             return;
         }
 
@@ -189,20 +195,25 @@
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             {
-                errorMessage = "You have already applied to this job.";
+                errorMessage = Loc.T("err_already_applied");
             }
             else
             {
-                errorMessage = "Could not submit your application. Please try again.";
+                errorMessage = Loc.T("err_submit_application_failed");
             }
         }
         catch (Exception)
         {
-            errorMessage = "Could not reach the server. Please try again.";
+            errorMessage = Loc.T("err_server_unreachable");
         }
         finally
         {
             isSubmitting = false;
         }
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 }

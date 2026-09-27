@@ -289,6 +289,22 @@ public static class Translations
             ["msg_resume_saved"] = "Resume saved successfully!",
             ["msg_resume_save_failed"] = "Failed to save resume. Please check backend API.",
             ["msg_login_to_save_resume"] = "Please log in first to save your resume.",
+
+            // Apply Modal
+            ["apply_for_prefix"] = "Apply for",
+            ["company_label"] = "Company:",
+            ["need_login_to_apply"] = "You need to",
+            ["log_in_lowercase"] = "log in",
+            ["as_worker_to_apply"] = "as a Worker to apply.",
+            ["cover_letter_lbl"] = "Cover Letter / Note to Recruiter",
+            ["cv_resume_pdf_lbl"] = "CV / Resume (PDF, max 5 MB)",
+            ["resume_pdf_only_err"] = "Please choose a PDF file.",
+            ["resume_too_large_err"] = "File is too large. Max size is 5 MB.",
+            ["btn_submitting"] = "Submitting...",
+            ["submit_application"] = "Submit Application",
+            ["err_fill_name_email"] = "Please fill in your name and email.",
+            ["err_already_applied"] = "You have already applied to this job.",
+            ["err_submit_application_failed"] = "Could not submit your application. Please try again.",
         },
         ["bn"] = new()
         {
@@ -575,6 +591,22 @@ public static class Translations
             ["msg_resume_saved"] = "সিভি সফলভাবে সেভ হয়েছে!",
             ["msg_resume_save_failed"] = "সিভি সেভ করা যায়নি। Backend API চেক করুন।",
             ["msg_login_to_save_resume"] = "সিভি সেভ করতে প্রথমে লগইন করুন।",
+
+            // Apply Modal
+            ["apply_for_prefix"] = "আবেদন করুন:",
+            ["company_label"] = "কোম্পানি:",
+            ["need_login_to_apply"] = "আবেদন করতে আপনাকে ওয়ার্কার হিসেবে",
+            ["log_in_lowercase"] = "লগইন",
+            ["as_worker_to_apply"] = "করতে হবে।",
+            ["cover_letter_lbl"] = "কভার লেটার / রিক্রুটারের জন্য নোট",
+            ["cv_resume_pdf_lbl"] = "সিভি / রিজিউম (PDF, সর্বোচ্চ ৫ MB)",
+            ["resume_pdf_only_err"] = "অনুগ্রহ করে একটি PDF ফাইল নির্বাচন করুন।",
+            ["resume_too_large_err"] = "ফাইলটি অনেক বড়। সর্বোচ্চ সাইজ ৫ MB।",
+            ["btn_submitting"] = "জমা দেওয়া হচ্ছে...",
+            ["submit_application"] = "আবেদন জমা দিন",
+            ["err_fill_name_email"] = "আপনার নাম এবং ইমেইল দিন।",
+            ["err_already_applied"] = "আপনি ইতিমধ্যে এই জবে আবেদন করেছেন।",
+            ["err_submit_application_failed"] = "আপনার আবেদন জমা দেওয়া যায়নি। আবার চেষ্টা করুন।",
         }
     };
 }
