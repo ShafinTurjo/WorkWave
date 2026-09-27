@@ -2,15 +2,16 @@
 @inject HttpClient Http
 @inject Frontend.Services.AuthStateService AuthState
 @inject IJSRuntime JS
+@implements IDisposable
 
 <div class="container mt-4">
-    <h3 class="mb-4">Build & Generate Your Resume</h3>
+    <h3 class="mb-4">@Loc.T("cv_generator_title")</h3>
 
     @if (isLoading)
     {
         <div class="d-flex justify-content-center my-5">
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">@Loc.T("msg_loading_jobs")</span>
             </div>
         </div>
     }
@@ -18,34 +19,34 @@
     {
         <div class="row">
             <div class="col-md-5 border-end pe-4 mb-4">
-                <h5 class="fw-bold mb-3">Enter Details</h5>
+                <h5 class="fw-bold mb-3">@Loc.T("enter_details")</h5>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Full Name</label>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_full_name")</label>
                     <input class="form-control" @bind="resume.FullName" @bind:event="oninput" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Phone Number</label>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_phone_number")</label>
                     <input class="form-control" @bind="resume.Phone" @bind:event="oninput" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Location</label>
-                    <input class="form-control" @bind="resume.Location" @bind:event="oninput" placeholder="e.g. Dhaka, Bangladesh" />
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_location")</label>
+                    <input class="form-control" @bind="resume.Location" @bind:event="oninput" placeholder="@Loc.T("location_placeholder")" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Professional Summary</label>
-                    <textarea class="form-control" rows="3" @bind="resume.Summary" @bind:event="oninput" placeholder="Brief summary about your goals..."></textarea>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_professional_summary")</label>
+                    <textarea class="form-control" rows="3" @bind="resume.Summary" @bind:event="oninput" placeholder="@Loc.T("summary_placeholder")"></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Skills (comma separated)</label>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_skills_csv")</label>
                     <input class="form-control" @bind="resume.Skills" @bind:event="oninput" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Experience</label>
-                    <textarea class="form-control" rows="4" @bind="resume.Experience" @bind:event="oninput" placeholder="Work experience details..."></textarea>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_experience")</label>
+                    <textarea class="form-control" rows="4" @bind="resume.Experience" @bind:event="oninput" placeholder="@Loc.T("experience_placeholder")"></textarea>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Education</label>
-                    <textarea class="form-control" rows="3" @bind="resume.Education" @bind:event="oninput" placeholder="Degree, Institution name, Graduation year..."></textarea>
+                    <label class="form-label font-weight-bold">@Loc.T("lbl_education")</label>
+                    <textarea class="form-control" rows="3" @bind="resume.Education" @bind:event="oninput" placeholder="@Loc.T("education_placeholder")"></textarea>
                 </div>
 
                 <div class="mt-4 mb-3 d-flex gap-2">
@@ -53,47 +54,47 @@
                         @if (isSaving)
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                            <span>Saving...</span>
+                            <span>@Loc.T("btn_saving_resume")</span>
                         }
                         else
                         {
-                            <span>Save to Profile</span>
+                            <span>@Loc.T("btn_save_profile")</span>
                         }
                     </button>
                     <button class="btn btn-outline-secondary" @onclick="PrintCv">
-                        <i class="bi bi-printer me-1"></i> Download PDF / Print
+                        <i class="bi bi-printer me-1"></i> @Loc.T("btn_download_print")
                     </button>
                 </div>
             </div>
 
             <div class="col-md-7 ps-4 d-flex flex-column align-items-center">
-                <h5 class="fw-bold align-self-start mb-3">Live CV Preview</h5>
+                <h5 class="fw-bold align-self-start mb-3">@Loc.T("live_cv_preview")</h5>
 
                 <div id="cv-preview-container" class="card border-0 shadow overflow-hidden" style="width: 100%; max-width: 800px; font-family: 'Georgia', serif; background-color: #ffffff;">
                     <div style="background-color: #374151; color: #ffffff; padding: 25px 30px; text-transform: uppercase;">
                         <h1 class="m-0 font-weight-bold" style="letter-spacing: 2px; font-size: 24px;">
-                            @(string.IsNullOrWhiteSpace(resume.FullName) ? "YOUR NAME" : resume.FullName)
+                            @(string.IsNullOrWhiteSpace(resume.FullName) ? Loc.T("default_your_name") : resume.FullName)
                         </h1>
                     </div>
 
                     <div class="d-flex" style="min-height: 680px;">
                         <div style="background-color: #52636d; color: #ffffff; width: 35%; padding: 25px 20px; font-size: 13px;">
                             <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Contact</h6>
+                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">@Loc.T("cv_contact_lbl")</h6>
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <i class="bi bi-geo-alt-fill"></i>
-                                    <span>@(string.IsNullOrWhiteSpace(resume.Location) ? "Location" : resume.Location)</span>
+                                    <span>@(string.IsNullOrWhiteSpace(resume.Location) ? Loc.T("default_location_lbl") : resume.Location)</span>
                                 </div>
                                 <div class="mb-2 d-flex align-items-center gap-2">
                                     <i class="bi bi-telephone-fill"></i>
-                                    <span>@(string.IsNullOrWhiteSpace(resume.Phone) ? "Phone Number" : resume.Phone)</span>
+                                    <span>@(string.IsNullOrWhiteSpace(resume.Phone) ? Loc.T("default_phone_lbl") : resume.Phone)</span>
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">Skills</h6>
+                                <h6 class="text-uppercase fw-bold border-bottom pb-2 mb-3" style="letter-spacing: 1px; font-size: 12px; border-color: rgba(255,255,255,0.3) !important;">@Loc.T("cv_skills_section_lbl")</h6>
                                 <p style="white-space: pre-line; line-height: 1.5; word-break: break-word;">
-                                    @(string.IsNullOrWhiteSpace(resume.Skills) ? "Your listed skills" : resume.Skills)
+                                    @(string.IsNullOrWhiteSpace(resume.Skills) ? Loc.T("default_skills_lbl") : resume.Skills)
                                 </p>
                             </div>
                         </div>
@@ -102,22 +103,22 @@
                             @if (!string.IsNullOrWhiteSpace(resume.Summary))
                             {
                                 <div class="mb-3">
-                                    <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">SUMMARY</h6>
+                                    <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">@Loc.T("cv_summary_section_lbl")</h6>
                                     <p style="line-height: 1.5; color: #374151;">@resume.Summary</p>
                                 </div>
                             }
 
                             <div class="mb-3">
-                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">EXPERIENCE</h6>
+                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">@Loc.T("cv_experience_section_lbl")</h6>
                                 <p style="white-space: pre-line; line-height: 1.5; color: #374151;">
-                                    @(string.IsNullOrWhiteSpace(resume.Experience) ? "Your experience details will appear here." : resume.Experience)
+                                    @(string.IsNullOrWhiteSpace(resume.Experience) ? Loc.T("default_experience_lbl") : resume.Experience)
                                 </p>
                             </div>
 
                             <div class="mb-3">
-                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">EDUCATION</h6>
+                                <h6 class="text-uppercase fw-bold pb-1 mb-2" style="letter-spacing: 1px; font-size: 12px; border-bottom: 2px solid #374151;">@Loc.T("cv_education_section_lbl")</h6>
                                 <p style="white-space: pre-line; line-height: 1.5; color: #374151;">
-                                    @(string.IsNullOrWhiteSpace(resume.Education) ? "Your education details will appear here." : resume.Education)
+                                    @(string.IsNullOrWhiteSpace(resume.Education) ? Loc.T("default_education_lbl") : resume.Education)
                                 </p>
                             </div>
                         </div>
@@ -136,6 +137,8 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Loc.OnChange += StateHasChanged;
+
         await AuthState.InitializeAsync();
 
         int currentUserId = 0;
@@ -192,17 +195,17 @@
             var response = await Http.PostAsJsonAsync("api/resume", resume);
             if (response.IsSuccessStatusCode)
             {
-                await JS.InvokeVoidAsync("alert", "Resume saved successfully!");
+                await JS.InvokeVoidAsync("alert", Loc.T("msg_resume_saved"));
             }
             else
             {
-                await JS.InvokeVoidAsync("alert", "Failed to save resume. Please check backend API.");
+                await JS.InvokeVoidAsync("alert", Loc.T("msg_resume_save_failed"));
             }
             isSaving = false;
         }
         else
         {
-            await JS.InvokeVoidAsync("alert", "Please log in first to save your resume.");
+            await JS.InvokeVoidAsync("alert", Loc.T("msg_login_to_save_resume"));
         }
     }
 
@@ -222,5 +225,10 @@
         public string Experience { get; set; } = string.Empty;
         public string Education { get; set; } = string.Empty;
         public string Skills { get; set; } = string.Empty;
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
     }
 }
