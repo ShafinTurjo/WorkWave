@@ -107,7 +107,7 @@
             if (response.IsSuccessStatusCode)
             {
                 isError = false;
-                statusMessage = "Apnar Payment ID submit hoyeche! Admin verify korle Access unlock hobe.";
+                statusMessage = "Your payment transaction ID has been submitted successfully.Wait for admin approval.";
                 paymentModel.TransactionId = string.Empty;
                 await LoadStatus();
             }
@@ -115,13 +115,13 @@
             {
                 isError = true;
                 statusMessage = await ReadMessageAsync(response)
-                    ?? "Doya kore abar chesta korun athoba Sothik Transaction ID din.";
+                    ?? "Action failed. Please try again.";
             }
         }
         catch (Exception)
         {
             isError = true;
-            statusMessage = "Server er sathe connect kora jachhe na. Ektu pore abar chesta korun.";
+            statusMessage = "Cannot connect to the server. Please try again later.";
         }
         finally
         {
