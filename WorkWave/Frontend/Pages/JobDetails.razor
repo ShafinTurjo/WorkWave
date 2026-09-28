@@ -31,13 +31,16 @@
                         @job.Category
                     </span>
 
-                    <!-- Report Job Button -->
-                    <button class="btn btn-outline-danger btn-sm rounded-3 fw-bold px-3" @onclick="OpenReportModal">
-                        <i class="bi bi-flag-fill me-1"></i> @Loc.T("btn_report")
-                    </button>
+                    <!-- Report Job Button (workers only) -->
+                    @if (AuthState.IsWorker)
+                    {
+                        <button class="btn btn-outline-danger btn-sm rounded-3 fw-bold px-3" @onclick="OpenReportModal">
+                            <i class="bi bi-flag-fill me-1"></i> @Loc.T("btn_report")
+                        </button>
+                    }
                 </div>
 
-                <h2 class="fw-bold text-dark mb-2">@job.Title</h2>
+                <h2 class="fw-bold text-dark mb-2 text-break">@job.Title</h2>
                 <p class="text-muted mb-3">
                     <i class="bi bi-building me-1"></i>@job.Company
                     &nbsp;&nbsp;|&nbsp;&nbsp;
@@ -49,7 +52,7 @@
                 <hr />
 
                 <h6 class="fw-bold text-dark mb-2">@Loc.T("job_description_lbl")</h6>
-                <p class="text-secondary">@job.Description</p>
+                <p class="text-secondary text-break" style="white-space: pre-line; overflow-wrap: anywhere;">@job.Description</p>
 
                 <h6 class="fw-bold text-dark mb-2 mt-3">@Loc.T("skills_tags_lbl")</h6>
                 <div class="d-flex flex-wrap gap-2 mb-4">

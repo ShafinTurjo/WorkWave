@@ -127,7 +127,7 @@ public class JobsController : ApiControllerBase
 
     
     [HttpPost("{id:int}/report")]
-    [Authorize]
+    [Authorize(Roles = "Worker")]
     public async Task<IActionResult> ReportJob(int id, [FromBody] ReportJobRequest request)
     {
         var job = await _db.Jobs.FindAsync(id);
