@@ -25,8 +25,9 @@ public class ApplicationsController : ApiControllerBase
         _env = env;
     }
 
-    
+    // Only Workers may apply. Employers and Admins get 403 Forbidden.
     [HttpPost]
+    [Authorize(Roles = "Worker")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(MaxResumeSizeBytes + 1024)]
     public async Task<ActionResult<ApplicationResponse>> Apply([FromForm] ApplyRequest request)

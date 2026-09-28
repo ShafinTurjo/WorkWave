@@ -2,6 +2,7 @@
 @using System.Net.Http.Json
 @inject NavigationManager Navigation
 @inject HttpClient Http
+@inject AuthStateService AuthState
 @implements IDisposable
 
 <div class="bg-light-subtle min-vh-100 py-5">
@@ -62,9 +63,12 @@
                     <button class="btn btn-light fw-bold px-4 py-2 rounded-3 border" @onclick='() => Navigation.NavigateTo("browse-jobs")'>
                         <i class="bi bi-arrow-left me-1"></i> @Loc.T("btn_back")
                     </button>
-                    <button class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" @onclick="() => showApply = true">
-                        @Loc.T("btn_apply") <i class="bi bi-arrow-right ms-1"></i>
-                    </button>
+                    @if (!AuthState.IsLoggedIn || AuthState.IsWorker)
+                    {
+                        <button class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" @onclick="() => showApply = true">
+                            @Loc.T("btn_apply") <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    }
                 </div>
             </div>
 
@@ -141,6 +145,7 @@
     protected override async Task OnInitializedAsync()
     {
         Loc.OnChange += StateHasChanged;
+        AuthState.OnChange += StateHasChanged;
 
         try
         {
@@ -192,5 +197,6 @@
     public void Dispose()
     {
         Loc.OnChange -= StateHasChanged;
+        AuthState.OnChange -= StateHasChanged;
     }
 }

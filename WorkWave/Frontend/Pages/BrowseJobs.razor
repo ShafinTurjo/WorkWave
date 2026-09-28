@@ -1,6 +1,7 @@
 ﻿@page "/browse-jobs"
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject AuthStateService AuthState
 @implements IDisposable
 
 <div class="bg-light-subtle min-vh-100 py-5">
@@ -120,9 +121,12 @@
 
                                 <div class="d-flex justify-content-between align-items-center pt-2">
                                     <span class="badge bg-light text-secondary border fw-medium px-2 py-1">@job.JobType</span>
-                                    <button class="btn btn-primary btn-sm fw-bold px-3 py-2 rounded-3 shadow-sm" @onclick="() => selectedJobForApply = job">
-                                        @Loc.T("btn_apply") <i class="bi bi-arrow-right ms-1"></i>
-                                    </button>
+                                    @if (!AuthState.IsLoggedIn || AuthState.IsWorker)
+                                    {
+                                        <button class="btn btn-primary btn-sm fw-bold px-3 py-2 rounded-3 shadow-sm" @onclick="() => selectedJobForApply = job">
+                                            @Loc.T("btn_apply") <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -221,6 +225,7 @@
     protected override async Task OnInitializedAsync()
     {
         Loc.OnChange += StateHasChanged;
+        AuthState.OnChange += StateHasChanged;
 
         try
         {
@@ -248,5 +253,6 @@
     public void Dispose()
     {
         Loc.OnChange -= StateHasChanged;
+        AuthState.OnChange -= StateHasChanged;
     }
 }

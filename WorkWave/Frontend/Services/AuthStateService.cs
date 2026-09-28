@@ -17,6 +17,7 @@ public class AuthStateService
 
     public bool IsLoggedIn => UserId is not null;
     public bool IsAdmin => Role == "Admin";
+    public bool IsWorker => Role == "Worker";
 
     // Admin can access every role's area; otherwise the role must match exactly.
     public bool CanAccess(string requiredRole) => IsAdmin || Role == requiredRole;
@@ -39,6 +40,7 @@ public class AuthStateService
             Email = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_user_email");
             Role = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_user_role");
             Token = await _js.InvokeAsync<string?>("localStorage.getItem", "workwave_token");
+            OnChange?.Invoke();
         }
     }
 

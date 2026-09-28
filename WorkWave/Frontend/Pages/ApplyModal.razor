@@ -22,6 +22,10 @@
                     {
                         <div class="alert alert-warning">@Loc.T("need_login_to_apply") <a href="login">@Loc.T("log_in_lowercase")</a> @Loc.T("as_worker_to_apply")</div>
                     }
+                    else if (!AuthState.IsWorker)
+                    {
+                        <div class="alert alert-info">@Loc.T("only_workers_can_apply")</div>
+                    }
                     else
                     {
                         @if (!string.IsNullOrEmpty(errorMessage))
@@ -63,7 +67,7 @@
 
                 <div class="modal-footer border-0 pt-2">
                     <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-3 text-secondary" @onclick="CloseModal">@Loc.T("btn_cancel")</button>
-                    @if (AuthState.IsLoggedIn)
+                    @if (AuthState.IsWorker)
                     {
                         <button type="button" class="btn btn-primary fw-bold px-4 py-2 rounded-3 shadow-sm" disabled="@isSubmitting" @onclick="SubmitModal">
                             <i class="bi bi-send-fill me-2"></i>@(isSubmitting ? Loc.T("btn_submitting") : Loc.T("submit_application"))
@@ -114,6 +118,7 @@
     protected override void OnInitialized()
     {
         Loc.OnChange += StateHasChanged;
+        AuthState.OnChange += StateHasChanged;
     }
 
     protected override void OnParametersSet()
@@ -158,7 +163,7 @@
 
     private async Task SubmitModal()
     {
-        if (SelectedJob is null || AuthState.UserId is null) return;
+        if (SelectedJob is null || AuthState.UserId is null || !AuthState.IsWorker) return;
 
         if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email))
         {
@@ -197,6 +202,10 @@
             {
                 errorMessage = Loc.T("err_already_applied");
             }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                errorMessage = Loc.T("only_workers_can_apply");
+            }
             else
             {
                 errorMessage = Loc.T("err_submit_application_failed");
@@ -215,5 +224,6 @@
     public void Dispose()
     {
         Loc.OnChange -= StateHasChanged;
+        AuthState.OnChange -= StateHasChanged;
     }
 }
