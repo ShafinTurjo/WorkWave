@@ -2,6 +2,8 @@
 @inject HttpClient Http
 @inject Frontend.Services.AuthStateService AuthState
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject Frontend.Services.PaymentAccessService PaymentAccess
 @implements IDisposable
 
 <div class="container mt-4 cv-page">
@@ -14,6 +16,10 @@
                 <span class="visually-hidden">@Loc.T("msg_loading_jobs")</span>
             </div>
         </div>
+    }
+    else if (locked)
+    {
+        <PaymentLockNotice />
     }
     else
     {
@@ -133,6 +139,7 @@
     private ResumeDto resume = new();
     private bool isLoading = true;
     private bool isSaving = false;
+    private bool locked = false;
     private Action? locChangedHandler;
 
     protected override async Task OnInitializedAsync()
@@ -141,6 +148,19 @@
         Loc.OnChange += locChangedHandler;
 
         await AuthState.InitializeAsync();
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        if (!await PaymentAccess.IsApprovedAsync())
+        {
+            locked = true;
+            isLoading = false;
+            return;
+        }
 
         int currentUserId = 0;
         if (AuthState.UserId.HasValue && AuthState.UserId.Value > 0)

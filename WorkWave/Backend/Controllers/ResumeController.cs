@@ -32,6 +32,8 @@ public class ResumeController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> SaveResume([FromBody] Resume resume)
     {
+        if (!await HasApprovedPaymentAsync(_db)) return PaymentRequired();
+
         var denied = EnsureSelfOrAdmin(resume.UserId);
         if (denied is not null) return denied;
 

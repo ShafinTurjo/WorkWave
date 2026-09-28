@@ -37,6 +37,8 @@ public class ResourcesController : ApiControllerBase
     [Authorize(Roles = "Worker,Admin")]
     public async Task<ActionResult<List<ResourceResponse>>> GetAll()
     {
+        if (!await HasApprovedPaymentAsync(_db)) return PaymentRequired();
+
         var items = await _db.Resources
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();

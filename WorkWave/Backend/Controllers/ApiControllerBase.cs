@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using Backend.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers;
 
@@ -21,4 +23,15 @@ public abstract class ApiControllerBase : ControllerBase
     /// <summary>Returns Forbid() unless the caller is the given user or an Admin.</summary>
     protected ActionResult? EnsureSelfOrAdmin(int userId) =>
         (userId == CurrentUserId || IsAdmin) ? null : Forbid();
+
+    /// <summary>Admins always pass; everyone else needs an approved payment.</summary>
+    protected async Task<bool> HasApprovedPaymentAsync(ApplicationDbContext db) =>
+        IsAdmin || await db.Users.AnyAsync(u => u.Id == CurrentUserId && u.IsPaymentApproved);
+
+    protected ObjectResult PaymentRequired() =>
+        StatusCode(StatusCodes.Status403Forbidden, new
+        {
+            code = "PaymentRequired",
+            message = "Ei feature use korte apnar payment approve howa dorkar."
+        });
 }
