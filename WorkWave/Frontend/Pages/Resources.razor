@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @inject LocalizationService Loc
+@inject PaymentAccessService PaymentAccess
 @implements IDisposable
 
 <style>
@@ -83,6 +84,10 @@
     @if (!authorized)
     {
         <div class="alert alert-warning border-0 shadow-sm">@Loc.T("checking_access")</div>
+    }
+    else if (locked)
+    {
+        <PaymentLockNotice />
     }
     else
     {
@@ -301,6 +306,7 @@
     private const long MaxFileSizeBytes = 20 * 1024 * 1024;
 
     private bool authorized;
+    private bool locked;
     private bool loading = true;
     private bool loadFailed;
     private List<ResourceItem> resources = new();
@@ -349,6 +355,13 @@
         }
 
         authorized = true;
+
+        if (!await PaymentAccess.IsApprovedAsync())
+        {
+            locked = true;
+            loading = false;
+            return;
+        }
 
         try
         {
