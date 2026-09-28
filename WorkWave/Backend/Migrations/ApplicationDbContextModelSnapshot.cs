@@ -42,14 +42,15 @@ namespace Backend.Migrations
                     b.Property<int>("JobApplicationId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("LocationOrLink")
+                    b.Property<string>("Location")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
                     b.Property<string>("Mode")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -62,6 +63,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 

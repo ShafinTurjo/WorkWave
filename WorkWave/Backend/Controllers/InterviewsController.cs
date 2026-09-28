@@ -14,10 +14,19 @@ namespace Backend.Controllers;
 [Authorize]
 public class InterviewsController : ApiControllerBase
 {
-    private static readonly string[] ValidModes = { "Online", "Onsite", "Phone" };
-    private static readonly string[] ValidStatuses = { "Completed", "Cancelled" };
+    // These strings are shared with the Blazor frontend — keep them in sync.
+    private const string ModeOnline = "Online";
+    private const string ModeInPerson = "InPerson";
+    private const string ModePhone = "Phone";
+    private static readonly string[] ValidModes = { ModeOnline, ModeInPerson, ModePhone };
 
     private const string Scheduled = "Scheduled";
+    private const string Confirmed = "Confirmed";
+    private const string Declined = "Declined";
+    private const string Cancelled = "Cancelled";
+
+    // Bangladesh Standard Time (UTC+6, no DST) — used when the client doesn't send its offset.
+    private const int DefaultUtcOffsetMinutes = 360;
 
     private readonly ApplicationDbContext _db;
     private readonly IEmailService _emailService;
@@ -47,14 +56,14 @@ public class InterviewsController : ApiControllerBase
             return BadRequest(new { message = "You can't schedule an interview for a rejected application." });
         }
 
-        var hasScheduled = await _db.Interviews
-            .AnyAsync(i => i.JobApplicationId == application.Id && i.Status == Scheduled);
-        if (hasScheduled)
+        var hasActive = await _db.Interviews
+            .AnyAsync(i => i.JobApplicationId == application.Id && i.Status != Cancelled);
+        if (hasActive)
         {
             return Conflict(new { message = "An interview is already scheduled for this applicant. Reschedule it instead." });
         }
 
-        var error = Validate(request, out var scheduledUtc);
+        var error = Validate(request, out var scheduledUtc, out var location);
         if (error is not null) return BadRequest(new { message = error });
 
         var interview = new Interview
@@ -63,7 +72,7 @@ public class InterviewsController : ApiControllerBase
             ScheduledAt = scheduledUtc,
             DurationMinutes = request.DurationMinutes,
             Mode = request.Mode,
-            LocationOrLink = Clean(request.LocationOrLink),
+            Location = location,
             Notes = Clean(request.Notes),
             Status = Scheduled,
             CreatedByUserId = CurrentUserId
@@ -73,12 +82,14 @@ public class InterviewsController : ApiControllerBase
         await _db.SaveChangesAsync();
         interview.JobApplication = application;
 
-        await NotifyApplicantAsync(interview, "Interview scheduled", "An interview has been scheduled for your application.");
+        await NotifyApplicantAsync(interview, request.UtcOffsetMinutes,
+            "Interview scheduled", "An interview has been scheduled for your application.");
 
         return Ok(ToResponse(interview));
     }
 
-    // Reschedule / edit a still-scheduled interview.
+    // Reschedule / edit an interview that hasn't been cancelled. Resets it to "Scheduled"
+    // so the applicant is asked to confirm the new details again.
     [HttpPut("{id:int}")]
     [Authorize(Roles = "Employer,Admin")]
     public async Task<ActionResult<InterviewResponse>> Update(int id, InterviewRequest request)
@@ -87,52 +98,78 @@ public class InterviewsController : ApiControllerBase
         if (interview is null) return NotFound(new { message = $"Interview {id} not found." });
         if (!CanManage(interview.JobApplication!)) return Forbid();
 
-        if (interview.Status != Scheduled)
+        if (interview.Status == Cancelled)
         {
-            return BadRequest(new { message = "Only a scheduled interview can be rescheduled." });
+            return BadRequest(new { message = "A cancelled interview can't be rescheduled. Schedule a new one instead." });
         }
 
-        var error = Validate(request, out var scheduledUtc);
+        var error = Validate(request, out var scheduledUtc, out var location);
         if (error is not null) return BadRequest(new { message = error });
 
         interview.ScheduledAt = scheduledUtc;
         interview.DurationMinutes = request.DurationMinutes;
         interview.Mode = request.Mode;
-        interview.LocationOrLink = Clean(request.LocationOrLink);
+        interview.Location = location;
         interview.Notes = Clean(request.Notes);
+        interview.Status = Scheduled;
+        interview.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        await NotifyApplicantAsync(interview, "Interview rescheduled", "Your interview details have been updated.");
+        await NotifyApplicantAsync(interview, request.UtcOffsetMinutes,
+            "Interview rescheduled", "Your interview details have been updated.");
 
         return Ok(ToResponse(interview));
     }
 
-    // Mark a scheduled interview as Completed or Cancelled.
-    [HttpPut("{id:int}/status")]
+    // Employer / Admin cancels an interview.
+    [HttpPost("{id:int}/cancel")]
     [Authorize(Roles = "Employer,Admin")]
-    public async Task<ActionResult<InterviewResponse>> UpdateStatus(int id, UpdateInterviewStatusRequest request)
+    public async Task<ActionResult<InterviewResponse>> Cancel(int id, [FromQuery] int? utcOffsetMinutes)
     {
-        if (!ValidStatuses.Contains(request.Status))
-        {
-            return BadRequest(new { message = $"Status must be one of: {string.Join(", ", ValidStatuses)}." });
-        }
-
         var interview = await LoadAsync(id);
         if (interview is null) return NotFound(new { message = $"Interview {id} not found." });
         if (!CanManage(interview.JobApplication!)) return Forbid();
 
-        if (interview.Status != Scheduled)
+        if (interview.Status == Cancelled)
         {
-            return BadRequest(new { message = "Only a scheduled interview can be updated." });
+            return BadRequest(new { message = "This interview is already cancelled." });
         }
 
-        interview.Status = request.Status;
+        interview.Status = Cancelled;
+        interview.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        if (request.Status == "Cancelled")
+        await NotifyApplicantAsync(interview, utcOffsetMinutes,
+            "Interview cancelled", "Your interview has been cancelled.");
+
+        return Ok(ToResponse(interview));
+    }
+
+    // The applicant confirms or declines their interview.
+    [HttpPut("{id:int}/respond")]
+    [Authorize(Roles = "Worker")]
+    public async Task<ActionResult<InterviewResponse>> Respond(int id, InterviewRespondRequest request)
+    {
+        var interview = await LoadAsync(id);
+        if (interview is null) return NotFound(new { message = $"Interview {id} not found." });
+
+        // Only the applicant who owns this application may respond.
+        if (interview.JobApplication is null || interview.JobApplication.ApplicantUserId != CurrentUserId)
+            return Forbid();
+
+        if (interview.Status == Cancelled)
         {
-            await NotifyApplicantAsync(interview, "Interview cancelled", "Your interview has been cancelled.");
+            return BadRequest(new { message = "This interview has been cancelled." });
         }
+
+        if (interview.ScheduledAt <= DateTime.UtcNow)
+        {
+            return BadRequest(new { message = "This interview time has already passed." });
+        }
+
+        interview.Status = request.Confirm ? Confirmed : Declined;
+        interview.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
 
         return Ok(ToResponse(interview));
     }
@@ -185,8 +222,11 @@ public class InterviewsController : ApiControllerBase
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     // Returns an error message, or null when the request is valid.
-    private static string? Validate(InterviewRequest r, out DateTime scheduledUtc)
+    // On success, `location` is the cleaned/normalised link, address or phone number.
+    private static string? Validate(InterviewRequest r, out DateTime scheduledUtc, out string location)
     {
+        location = "";
+
         scheduledUtc = r.ScheduledAt.Kind switch
         {
             DateTimeKind.Utc => r.ScheduledAt,
@@ -203,26 +243,48 @@ public class InterviewsController : ApiControllerBase
         if (!ValidModes.Contains(r.Mode))
             return $"Mode must be one of: {string.Join(", ", ValidModes)}.";
 
-        var location = Clean(r.LocationOrLink);
+        var value = Clean(r.Location);
 
-        if (r.Mode == "Online")
+        switch (r.Mode)
         {
-            // Only real http(s) links — the frontend renders this as a clickable link.
-            if (location is null || !Uri.TryCreate(location, UriKind.Absolute, out var uri)
-                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            case ModeOnline:
             {
-                return "Please provide a valid meeting link (starting with http:// or https://).";
+                if (value is null)
+                    return "Please provide a valid meeting link (e.g. https://meet.google.com/abc-defg-hij).";
+
+                // Be forgiving: "meet.google.com/abc" -> "https://meet.google.com/abc".
+                if (!value.Contains("://", StringComparison.Ordinal))
+                    value = "https://" + value;
+
+                if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
+                    || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                    || !uri.Host.Contains('.'))
+                {
+                    return "Please provide a valid meeting link (e.g. https://meet.google.com/abc-defg-hij).";
+                }
+
+                value = uri.ToString();
+                break;
             }
-        }
-        else if (r.Mode == "Onsite" && location is null)
-        {
-            return "Please provide the interview address.";
+
+            case ModeInPerson:
+                if (value is null) return "Please provide the interview address.";
+                break;
+
+            case ModePhone:
+                if (value is null || value.Count(char.IsDigit) < 5)
+                    return "Please provide a valid phone number.";
+                break;
         }
 
+        if (value!.Length > 500)
+            return "Location / link is too long (max 500 characters).";
+
+        location = value;
         return null;
     }
 
-    private InterviewResponse ToResponse(Interview i)
+    private static InterviewResponse ToResponse(Interview i)
     {
         var application = i.JobApplication;
         var job = application?.Job;
@@ -239,7 +301,7 @@ public class InterviewsController : ApiControllerBase
             ScheduledAt = DateTime.SpecifyKind(i.ScheduledAt, DateTimeKind.Utc),
             DurationMinutes = i.DurationMinutes,
             Mode = i.Mode,
-            LocationOrLink = i.LocationOrLink,
+            Location = i.Location,
             Notes = i.Notes,
             Status = i.Status,
             CreatedAt = DateTime.SpecifyKind(i.CreatedAt, DateTimeKind.Utc)
@@ -247,7 +309,7 @@ public class InterviewsController : ApiControllerBase
     }
 
     // Best-effort email: a failed email must never fail the API request.
-    private async Task NotifyApplicantAsync(Interview interview, string subject, string intro)
+    private async Task NotifyApplicantAsync(Interview interview, int? utcOffsetMinutes, string subject, string intro)
     {
         try
         {
@@ -257,20 +319,22 @@ public class InterviewsController : ApiControllerBase
             var job = application.Job;
             string E(string? s) => WebUtility.HtmlEncode(s ?? "");
 
-            // Bangladesh Standard Time is a fixed UTC+6 (no daylight saving).
-            var bdTime = DateTime.SpecifyKind(interview.ScheduledAt, DateTimeKind.Utc).AddHours(6);
+            var offset = utcOffsetMinutes is >= -840 and <= 840 ? utcOffsetMinutes.Value : DefaultUtcOffsetMinutes;
+            var localTime = DateTime.SpecifyKind(interview.ScheduledAt, DateTimeKind.Utc).AddMinutes(offset);
+            var sign = offset >= 0 ? "+" : "-";
+            var tzLabel = $"UTC{sign}{Math.Abs(offset) / 60:00}:{Math.Abs(offset) % 60:00}";
 
             var where = interview.Mode switch
             {
-                "Online" => $"Online — <a href=\"{E(interview.LocationOrLink)}\">{E(interview.LocationOrLink)}</a>",
-                "Onsite" => $"On-site — {E(interview.LocationOrLink)}",
-                _ => $"Phone{(string.IsNullOrEmpty(interview.LocationOrLink) ? "" : " — " + E(interview.LocationOrLink))}"
+                ModeOnline => $"Online — <a href=\"{E(interview.Location)}\">{E(interview.Location)}</a>",
+                ModeInPerson => $"In person — {E(interview.Location)}",
+                _ => $"Phone call — {E(interview.Location)}"
             };
 
-            var details = interview.Status == "Cancelled"
+            var details = interview.Status == Cancelled
                 ? ""
                 : $"""
-                  <p><strong>When:</strong> {bdTime:dddd, dd MMM yyyy, hh:mm tt} (Bangladesh time, UTC+6)<br/>
+                  <p><strong>When:</strong> {localTime:dddd, dd MMM yyyy, hh:mm tt} ({tzLabel})<br/>
                   <strong>Duration:</strong> {interview.DurationMinutes} minutes<br/>
                   <strong>Where:</strong> {where}</p>
                   {(string.IsNullOrEmpty(interview.Notes) ? "" : $"<p><strong>Note from the employer:</strong> {E(interview.Notes)}</p>")}
