@@ -1,0 +1,120 @@
+@page "/pending-payments"
+@inject HttpClient Http
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <h3 class="mb-3 text-primary">Pending Payment Approvals</h3>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (pendingPayments == null)
+    {
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+    else if (!pendingPayments.Any())
+    {
+        <div class="alert alert-secondary">Kono Pending Payment Nei.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>User ID</th>
+                        <th>Method</th>
+                        <th>Transaction ID</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in pendingPayments)
+                    {
+                        <tr>
+                            <td>@item.UserId</td>
+                            <td><span class="badge bg-info text-dark">@item.PaymentMethod</span></td>
+                            <td><code class="fs-6">@item.TransactionId</code></td>
+                            <td>
+                                <button class="btn btn-sm btn-success me-2" @onclick="() => Approve(item.UserId)">
+                                    Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => Reject(item.UserId)">
+                                    Reject
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<PaymentApprovalModel>? pendingPayments;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        if (!AuthState.IsAdmin)
+        {
+            Navigation.NavigateTo("");
+            return;
+        }
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            pendingPayments = await Http.GetFromJsonAsync<List<PaymentApprovalModel>>("api/admin/pending-payments");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading payments: {ex.Message}");
+            errorMessage = "Pending payment list load kora jayni.";
+            pendingPayments = new();
+        }
+    }
+
+    private async Task Approve(int userId) => await Act($"api/admin/approve-payment/{userId}");
+
+    private async Task Reject(int userId) => await Act($"api/admin/reject-payment/{userId}");
+
+    private async Task Act(string url)
+    {
+        errorMessage = string.Empty;
+        try
+        {
+            var response = await Http.PostAsync(url, null);
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadData();
+            }
+            else
+            {
+                errorMessage = "Action fail hoyeche. Abar chesta korun.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "Server er sathe connect kora jachhe na.";
+        }
+    }
+}

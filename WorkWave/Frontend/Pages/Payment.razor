@@ -1,0 +1,144 @@
+@page "/payment"
+@inject HttpClient Http
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<div class="container mt-4">
+    <div class="card shadow-sm p-4">
+        <h3 class="text-primary mb-3">Worker Verification Payment</h3>
+
+        <div class="alert alert-info">
+            <p class="mb-1"><strong>bKash Personal Account:</strong> <span class="badge bg-success fs-6">01306270617</span></p>
+            <p class="mb-0">Doya kore Send Money complete kore Transaction ID dakhil korun.</p>
+        </div>
+
+        @if (currentStatus is not null)
+        {
+            <div class="alert @StatusCss">
+                Current status: <strong>@currentStatus.Status</strong>
+                @if (!string.IsNullOrEmpty(currentStatus.TransactionId))
+                {
+                    <span> (TrxID: <code>@currentStatus.TransactionId</code>)</span>
+                }
+            </div>
+        }
+
+        @if (currentStatus?.Status == "Approved")
+        {
+            <div class="alert alert-success mb-0">Apnar payment approve hoye gechhe.</div>
+        }
+        else
+        {
+            <EditForm Model="paymentModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Transaction ID (trxId)</label>
+                    <InputText @bind-Value="paymentModel.TransactionId" class="form-control" placeholder="e.g. B8X9A7K2" />
+                    <ValidationMessage For="() => paymentModel.TransactionId" />
+                </div>
+
+                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span>Submitting...</span>
+                    }
+                    else
+                    {
+                        <span>Submit Payment Verification</span>
+                    }
+                </button>
+            </EditForm>
+        }
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="alert @(isError ? "alert-danger" : "alert-success") mt-3">@statusMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly PaymentSubmitModel paymentModel = new();
+    private PaymentStatusModel? currentStatus;
+    private bool isSubmitting;
+    private bool isError;
+    private string statusMessage = string.Empty;
+
+    private string StatusCss => currentStatus?.Status switch
+    {
+        "Approved" => "alert-success",
+        "Rejected" => "alert-danger",
+        _ => "alert-warning"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        await LoadStatus();
+    }
+
+    private async Task LoadStatus()
+    {
+        try
+        {
+            currentStatus = await Http.GetFromJsonAsync<PaymentStatusModel>("api/payment/status");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading payment status: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        statusMessage = string.Empty;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/payment/submit", paymentModel);
+            if (response.IsSuccessStatusCode)
+            {
+                isError = false;
+                statusMessage = "Apnar Payment ID submit hoyeche! Admin verify korle Access unlock hobe.";
+                paymentModel.TransactionId = string.Empty;
+                await LoadStatus();
+            }
+            else
+            {
+                isError = true;
+                statusMessage = await ReadMessageAsync(response)
+                    ?? "Doya kore abar chesta korun athoba Sothik Transaction ID din.";
+            }
+        }
+        catch (Exception)
+        {
+            isError = true;
+            statusMessage = "Server er sathe connect kora jachhe na. Ektu pore abar chesta korun.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static async Task<string?> ReadMessageAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            return body is not null && body.TryGetValue("message", out var m) ? m : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

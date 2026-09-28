@@ -1,4 +1,5 @@
 using Backend.Data;
+using Backend.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +23,6 @@ public class AdminController : ApiControllerBase
     {
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
 
-        // গত ৭ দিনের প্রতিদিনের সাইনআপ সংখ্যা
         var dailySignups = new int[7];
         for (int i = 0; i < 7; i++)
         {
@@ -30,7 +30,6 @@ public class AdminController : ApiControllerBase
             dailySignups[i] = await _db.Users.CountAsync(u => u.CreatedAt.Date == day);
         }
 
-        // ডায়নামিক রিসেন্ট অ্যাক্টিভিটি ডাটা তৈরি
         var recentActivityList = new List<object>();
 
         var latestJob = await _db.Jobs
@@ -202,5 +201,49 @@ public class AdminController : ApiControllerBase
         _db.JobApplications.Remove(app);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpGet("pending-payments")]
+    public async Task<IActionResult> GetPendingPayments()
+    {
+        var pendingUsers = await _db.Users
+            .Where(u => u.PaymentStatus == "Pending" && u.TransactionId != null && u.TransactionId != "")
+            .OrderBy(u => u.Id)
+            .Select(u => new PaymentApprovalDtos
+            {
+                UserId = u.Id,
+                TransactionId = u.TransactionId!,
+                PaymentMethod = u.PaymentMethod ?? "bKash",
+                Status = u.PaymentStatus
+            })
+            .ToListAsync();
+
+        return Ok(pendingUsers);
+    }
+
+    [HttpPost("approve-payment/{userId:int}")]
+    public async Task<IActionResult> ApprovePayment(int userId)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user == null) return NotFound(new { message = "User pawa jayni." });
+
+        user.PaymentStatus = "Approved";
+        user.IsPaymentApproved = true;
+
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Payment successfully approved!" });
+    }
+
+    [HttpPost("reject-payment/{userId:int}")]
+    public async Task<IActionResult> RejectPayment(int userId)
+    {
+        var user = await _db.Users.FindAsync(userId);
+        if (user == null) return NotFound(new { message = "User pawa jayni." });
+
+        user.PaymentStatus = "Rejected";
+        user.IsPaymentApproved = false;
+
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Payment request rejected." });
     }
 }

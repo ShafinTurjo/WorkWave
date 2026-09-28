@@ -56,12 +56,27 @@
                         </a>
                     </li>
                 }
+                @if (AuthState.Role == "Worker")
+                {
+                    <li class="nav-item px-2">
+                        <a class="nav-link text-light d-inline-flex align-items-center" href="payment">
+                            <i class="bi bi-wallet2 me-2"></i>
+                            <span>@Loc.T("nav_payment")</span>
+                        </a>
+                    </li>
+                }
                 @if (AuthState.IsAdmin)
                 {
                     <li class="nav-item px-2">
                         <a class="nav-link text-light d-inline-flex align-items-center" href="admin">
                             <i class="bi bi-shield-lock me-2"></i>
                             <span>@Loc.T("nav_admin")</span>
+                        </a>
+                    </li>
+                    <li class="nav-item px-2">
+                        <a class="nav-link text-light d-inline-flex align-items-center" href="pending-payments">
+                            <i class="bi bi-cash-coin me-2"></i>
+                            <span>@Loc.T("nav_pending_payments")</span>
                         </a>
                     </li>
                 }

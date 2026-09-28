@@ -30,4 +30,8 @@ public class User
 
     public ICollection<Job> PostedJobs { get; set; } = new List<Job>();
     public ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
+    public string? TransactionId { get; set; }
+    public string? PaymentMethod { get; set; } = "bKash";
+    public string PaymentStatus { get; set; } = "Pending"; // Pending, Approved, Rejected
+    public bool IsPaymentApproved { get; set; } = false;
 }
