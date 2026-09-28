@@ -88,7 +88,7 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading payments: {ex.Message}");
-            errorMessage = "Pending payment list load kora jayni.";
+            errorMessage = "Pending payment list cannot be loaded.";
             pendingPayments = new();
         }
     }
@@ -109,12 +109,12 @@
             }
             else
             {
-                errorMessage = "Action fail hoyeche. Abar chesta korun.";
+                errorMessage = "Action failed. Please try again.";
             }
         }
         catch (Exception)
         {
-            errorMessage = "Server er sathe connect kora jachhe na.";
+            errorMessage = "Cannot connect to the server.";
         }
     }
 }

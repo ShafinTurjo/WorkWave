@@ -24,22 +24,22 @@ public class PaymentController : ApiControllerBase
         var trxId = dto.TransactionId?.Trim();
         if (string.IsNullOrWhiteSpace(trxId))
         {
-            return BadRequest(new { message = "Transaction ID deya baddhyatamulok." });
+            return BadRequest(new { message = "Transaction ID is must." });
         }
 
         var user = await _db.Users.FindAsync(CurrentUserId);
-        if (user == null) return NotFound(new { message = "User pawa jayni." });
+        if (user == null) return NotFound(new { message = "User has not been found." });
 
         if (user.PaymentStatus == "Approved")
         {
-            return BadRequest(new { message = "Apnar payment agei approve hoye gechhe." });
+            return BadRequest(new { message = "Your payment has already been approved." });
         }
 
         // Same trxId keu duibar use korte parbe na
         var alreadyUsed = await _db.Users.AnyAsync(u => u.Id != user.Id && u.TransactionId == trxId);
         if (alreadyUsed)
         {
-            return Conflict(new { message = "Ei Transaction ID agei onno account e use kora hoyeche." });
+            return Conflict(new { message = "This Transaction ID has already been used by another account." });
         }
 
         user.TransactionId = trxId;
@@ -48,14 +48,14 @@ public class PaymentController : ApiControllerBase
         user.IsPaymentApproved = false;
 
         await _db.SaveChangesAsync();
-        return Ok(new { message = "Payment transaction ID submit hoyeche." });
+        return Ok(new { message = "Payment transaction ID has been submitted." });
     }
 
     [HttpGet("status")]
     public async Task<IActionResult> GetPaymentStatus()
     {
         var user = await _db.Users.FindAsync(CurrentUserId);
-        if (user == null) return NotFound(new { message = "User pawa jayni." });
+        if (user == null) return NotFound(new { message = "User has not been found." });
 
         return Ok(new PaymentStatusDtos
         {
