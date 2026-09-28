@@ -1,0 +1,12 @@
+/* CSS for CvGenerator component */
+.cv-page h3,
+.cv-page h5,
+.cv-page .form-label {
+    color: #f8f9fa;
+}
+
+#cv-preview-container,
+#cv-preview-container * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}

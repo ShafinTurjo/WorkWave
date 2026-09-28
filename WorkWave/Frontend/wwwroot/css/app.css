@@ -405,4 +405,27 @@ code {
     @page {
         margin: 0; 
     }
+    @media print {
+        @page {
+            margin: 0;
+        }
+
+        body:has(#cv-preview-container) * {
+            visibility: hidden;
+        }
+
+        body:has(#cv-preview-container) #cv-preview-container,
+        body:has(#cv-preview-container) #cv-preview-container * {
+            visibility: visible;
+        }
+
+        body:has(#cv-preview-container) #cv-preview-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            max-width: none !important;
+            box-shadow: none !important;
+        }
+    }
 }
