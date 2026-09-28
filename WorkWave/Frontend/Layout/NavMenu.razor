@@ -29,6 +29,15 @@
                         <span>@Loc.T("nav_jobs")</span>
                     </a>
                 </li>
+                @if (AuthState.Role == "Worker" || AuthState.IsAdmin)
+                {
+                    <li class="nav-item px-2">
+                        <a class="nav-link text-light d-inline-flex align-items-center" href="resources">
+                            <i class="bi bi-collection-play me-2"></i>
+                            <span>@Loc.T("nav_resources")</span>
+                        </a>
+                    </li>
+                }
                 @if (AuthState.Role == "Employer")
                 {
                     <li class="nav-item px-2">

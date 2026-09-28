@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
     public DbSet<Resume> Resumes => Set<Resume>();
     public DbSet<JobReport> JobReports => Set<JobReport>();
+    public DbSet<Resource> Resources => Set<Resource>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

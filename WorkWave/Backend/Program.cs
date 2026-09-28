@@ -89,6 +89,7 @@ else
 }
 
 Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resumes"));
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "resources"));
 
 if (app.Environment.IsDevelopment())
 {

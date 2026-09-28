@@ -1,0 +1,525 @@
+@page "/resources"
+@using System.Net.Http.Json
+@using Frontend.Services
+@inject HttpClient Http
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject LocalizationService Loc
+@implements IDisposable
+
+<style>
+    .res-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .res-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.10); transform: translateY(-2px); }
+
+    .res-thumb {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        background: #111;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .res-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .res-play {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,.15);
+        transition: background .2s ease;
+    }
+    .res-thumb:hover .res-play { background: rgba(0,0,0,.35); }
+    .res-play i {
+        font-size: 2.2rem; color: #fff; background: #ff0000;
+        width: 58px; height: 40px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    .res-file-thumb {
+        aspect-ratio: 16 / 9;
+        background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #3b5bdb;
+    }
+    .res-file-thumb i { font-size: 3rem; line-height: 1; }
+    .res-file-thumb .ext { font-size: .75rem; font-weight: 700; letter-spacing: .08em; margin-top: .35rem; }
+
+    .res-body { padding: .9rem 1rem 1rem; display: flex; flex-direction: column; flex: 1; }
+    .res-title {
+        font-weight: 600; margin-bottom: .35rem; line-height: 1.3;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .res-desc {
+        color: #6b7280; font-size: .85rem; margin-bottom: .75rem;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .res-meta { margin-top: auto; font-size: .78rem; color: #9ca3af; }
+
+    .res-overlay {
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(0,0,0,.75);
+        display: flex; align-items: center; justify-content: center;
+        padding: 1rem;
+    }
+    .res-player {
+        position: relative; background: #fff; border-radius: 14px; overflow: hidden;
+        width: 100%; max-width: 900px; max-height: 95vh; overflow-y: auto;
+    }
+    .res-close {
+        position: absolute; top: .5rem; right: .5rem; z-index: 2;
+        border: 0; background: rgba(0,0,0,.6); color: #fff;
+        width: 34px; height: 34px; border-radius: 50%;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    @if (!authorized)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">@Loc.T("checking_access")</div>
+    }
+    else
+    {
+        <div class="p-3 bg-white shadow-sm rounded mb-4 border-start border-4 border-primary d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h4 class="mb-1 text-primary fw-bold"><i class="bi bi-collection-play me-2"></i>@Loc.T("res_title")</h4>
+                <p class="text-muted mb-0 small">@Loc.T("res_subtitle")</p>
+            </div>
+            @if (AuthState.IsAdmin)
+            {
+                <button class="btn btn-primary btn-sm" @onclick="() => showForm = !showForm">
+                    <i class="bi @(showForm ? "bi-x-lg" : "bi-plus-circle") me-1"></i> @Loc.T("res_add_new")
+                </button>
+            }
+        </div>
+
+        @* ---------- Admin: add resource ---------- *@
+        @if (AuthState.IsAdmin && showForm)
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="btn-group mb-3" role="group">
+                        <button type="button" class="btn btn-sm @(newType == "video" ? "btn-primary" : "btn-outline-primary")" @onclick='() => SetType("video")'>
+                            <i class="bi bi-youtube me-1"></i> @Loc.T("res_type_video")
+                        </button>
+                        <button type="button" class="btn btn-sm @(newType == "file" ? "btn-primary" : "btn-outline-primary")" @onclick='() => SetType("file")'>
+                            <i class="bi bi-file-earmark-arrow-up me-1"></i> @Loc.T("res_type_file")
+                        </button>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">@Loc.T("res_lbl_title")</label>
+                            <input class="form-control" maxlength="200" @bind="newTitle" @bind:event="oninput" />
+                        </div>
+
+                        <div class="col-md-6">
+                            @if (newType == "video")
+                            {
+                                <label class="form-label fw-semibold small">@Loc.T("res_lbl_youtube")</label>
+                                <input class="form-control" placeholder="https://www.youtube.com/watch?v=..." @bind="newYoutube" @bind:event="oninput" />
+                            }
+                            else
+                            {
+                                <label class="form-label fw-semibold small">@Loc.T("res_lbl_file")</label>
+                                <InputFile @key="formVersion" OnChange="OnFileSelected" class="form-control"
+                                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.png,.jpg,.jpeg" />
+                                @if (selectedFile != null)
+                                {
+                                    <div class="form-text text-success">
+                                        <i class="bi bi-file-earmark-check-fill me-1"></i>@selectedFile.Name (@FormatSize(selectedFile.Size))
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">@Loc.T("res_lbl_desc")</label>
+                            <textarea class="form-control" rows="3" maxlength="1000" @bind="newDescription" @bind:event="oninput"></textarea>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(formError))
+                    {
+                        <div class="alert alert-danger py-2 mt-3 mb-0 small">@formError</div>
+                    }
+                    @if (!string.IsNullOrEmpty(formSuccess))
+                    {
+                        <div class="alert alert-success py-2 mt-3 mb-0 small">@formSuccess</div>
+                    }
+
+                    <div class="mt-3">
+                        <button class="btn btn-primary px-4" disabled="@submitting" @onclick="AddResource">
+                            @if (submitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>@Loc.T("res_btn_adding")
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-plus-lg me-1"></i>@Loc.T("res_btn_add")</span>
+                            }
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ---------- Filter + search ---------- *@
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div class="btn-group" role="group">
+                <button class="btn btn-sm @(filter == "all" ? "btn-dark" : "btn-outline-dark")" @onclick='() => filter = "all"'>@Loc.T("res_filter_all")</button>
+                <button class="btn btn-sm @(filter == "video" ? "btn-dark" : "btn-outline-dark")" @onclick='() => filter = "video"'>
+                    <i class="bi bi-youtube me-1"></i>@Loc.T("res_filter_videos")
+                </button>
+                <button class="btn btn-sm @(filter == "file" ? "btn-dark" : "btn-outline-dark")" @onclick='() => filter = "file"'>
+                    <i class="bi bi-folder2-open me-1"></i>@Loc.T("res_filter_files")
+                </button>
+            </div>
+            <input class="form-control form-control-sm" style="max-width: 260px;" placeholder="@Loc.T("res_search_ph")"
+                   @bind="search" @bind:event="oninput" />
+        </div>
+
+        @* ---------- List ---------- *@
+        @if (loading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                <span class="ms-2 text-muted">@Loc.T("res_loading")</span>
+            </div>
+        }
+        else if (loadFailed)
+        {
+            <div class="alert alert-danger border-0 shadow-sm">@Loc.T("res_load_failed")</div>
+        }
+        else if (!Filtered.Any())
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-collection fs-1 d-block mb-2"></i>
+                @Loc.T("res_empty")
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                @foreach (var r in Filtered)
+                {
+                    <div class="col">
+                        <div class="res-card">
+                            @if (r.Type == "Video")
+                            {
+                                <div class="res-thumb" role="button" @onclick="() => OpenVideo(r)">
+                                    <img src="@r.ThumbnailUrl" alt="@r.Title" loading="lazy" />
+                                    <span class="res-play"><i class="bi bi-play-fill"></i></span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="res-file-thumb">
+                                    <i class="bi @FileIcon(r.OriginalFileName)"></i>
+                                    <span class="ext">@FileExt(r.OriginalFileName)</span>
+                                </div>
+                            }
+
+                            <div class="res-body">
+                                <h6 class="res-title" title="@r.Title">@r.Title</h6>
+                                @if (!string.IsNullOrWhiteSpace(r.Description))
+                                {
+                                    <p class="res-desc" title="@r.Description">@r.Description</p>
+                                }
+
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    @if (r.Type == "Video")
+                                    {
+                                        <button class="btn btn-sm btn-danger" @onclick="() => OpenVideo(r)">
+                                            <i class="bi bi-play-fill me-1"></i>@Loc.T("res_watch")
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-sm btn-outline-primary" href="@r.FileUrl" target="_blank" rel="noopener">
+                                            <i class="bi bi-download me-1"></i>@Loc.T("res_download")
+                                        </a>
+                                    }
+
+                                    @if (AuthState.IsAdmin)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger ms-auto" title="@Loc.T("res_delete")" @onclick="() => DeleteResource(r)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
+                                </div>
+
+                                <div class="res-meta">
+                                    @(r.Type == "Video" ? Loc.T("res_badge_video") : Loc.T("res_badge_file"))
+                                    • @r.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                    @if (r.Type == "File" && r.FileSize is not null)
+                                    {
+                                        <span> • @FormatSize(r.FileSize.Value)</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@* ---------- Video player ---------- *@
+@if (playing is not null)
+{
+    <div class="res-overlay" @onclick="ClosePlayer">
+        <div class="res-player" @onclick:stopPropagation="true">
+            <button class="res-close" @onclick="ClosePlayer"><i class="bi bi-x-lg"></i></button>
+            <div class="ratio ratio-16x9 bg-black">
+                <iframe src="@($"{playing.EmbedUrl}?autoplay=1&rel=0")" title="@playing.Title"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+            </div>
+            <div class="p-3">
+                <h5 class="fw-bold mb-1">@playing.Title</h5>
+                @if (!string.IsNullOrWhiteSpace(playing.Description))
+                {
+                    <p class="text-muted mb-2">@playing.Description</p>
+                }
+                <a href="@playing.WatchUrl" target="_blank" rel="noopener" class="small">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>@Loc.T("res_watch_youtube")
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const long MaxFileSizeBytes = 20 * 1024 * 1024;
+
+    private bool authorized;
+    private bool loading = true;
+    private bool loadFailed;
+    private List<ResourceItem> resources = new();
+
+    private string filter = "all";
+    private string search = "";
+    private ResourceItem? playing;
+
+    // admin form
+    private bool showForm;
+    private bool submitting;
+    private string newType = "video";
+    private string newTitle = "";
+    private string newDescription = "";
+    private string newYoutube = "";
+    private IBrowserFile? selectedFile;
+    private int formVersion;
+    private string? formError;
+    private string? formSuccess;
+
+    private IEnumerable<ResourceItem> Filtered => resources
+        .Where(r => filter == "all"
+                    || (filter == "video" && r.Type == "Video")
+                    || (filter == "file" && r.Type == "File"))
+        .Where(r => string.IsNullOrWhiteSpace(search)
+                    || r.Title.Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || (r.Description ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.InitializeAsync();
+        await Loc.InitializeAsync();
+        Loc.OnChange += StateHasChanged;
+
+        if (!AuthState.IsLoggedIn)
+        {
+            Navigation.NavigateTo("login");
+            return;
+        }
+
+        // Workers and Admins only (Admin passes CanAccess for every role).
+        if (!AuthState.CanAccess("Worker"))
+        {
+            Navigation.NavigateTo("");
+            return;
+        }
+
+        authorized = true;
+
+        try
+        {
+            var result = await Http.GetFromJsonAsync<List<ResourceItem>>("api/resources");
+            if (result is not null) resources = result;
+        }
+        catch (Exception)
+        {
+            loadFailed = true;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void OpenVideo(ResourceItem r) => playing = r;
+    private void ClosePlayer() => playing = null;
+
+    private void SetType(string type)
+    {
+        newType = type;
+        formError = null;
+        formSuccess = null;
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        formError = null;
+        selectedFile = null;
+
+        var file = e.File;
+        if (file.Size > MaxFileSizeBytes)
+        {
+            formError = Loc.T("res_err_file_too_large");
+            return;
+        }
+
+        selectedFile = file;
+    }
+
+    private async Task AddResource()
+    {
+        formError = null;
+        formSuccess = null;
+
+        if (string.IsNullOrWhiteSpace(newTitle)) { formError = Loc.T("res_err_title_required"); return; }
+        if (newType == "video" && string.IsNullOrWhiteSpace(newYoutube)) { formError = Loc.T("res_err_youtube_required"); return; }
+        if (newType == "file" && selectedFile is null) { formError = Loc.T("res_err_file_required"); return; }
+
+        submitting = true;
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent(newTitle.Trim()), "Title");
+            content.Add(new StringContent(newDescription?.Trim() ?? ""), "Description");
+
+            if (newType == "video")
+            {
+                content.Add(new StringContent(newYoutube.Trim()), "YoutubeUrl");
+            }
+            else
+            {
+                var streamContent = new StreamContent(selectedFile!.OpenReadStream(MaxFileSizeBytes));
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+                    string.IsNullOrEmpty(selectedFile.ContentType) ? "application/octet-stream" : selectedFile.ContentType);
+                content.Add(streamContent, "File", selectedFile.Name);
+            }
+
+            var response = await Http.PostAsync("api/resources", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var created = await response.Content.ReadFromJsonAsync<ResourceItem>();
+                if (created is not null) resources.Insert(0, created);
+
+                newTitle = "";
+                newDescription = "";
+                newYoutube = "";
+                selectedFile = null;
+                formVersion++; // resets the <InputFile>
+                formSuccess = Loc.T("res_msg_added");
+            }
+            else
+            {
+                formError = await ReadError(response) ?? Loc.T("res_err_generic");
+            }
+        }
+        catch (Exception)
+        {
+            formError = Loc.T("res_err_generic");
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+
+    private async Task DeleteResource(ResourceItem r)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", Loc.T("res_delete_confirm"))) return;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/resources/{r.Id}");
+            if (response.IsSuccessStatusCode) resources.Remove(r);
+        }
+        catch (Exception)
+        {
+            // ignore — the item simply stays in the list
+        }
+    }
+
+    private static async Task<string?> ReadError(HttpResponseMessage response)
+    {
+        try
+        {
+            var err = await response.Content.ReadFromJsonAsync<ApiError>();
+            return err?.Message;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string FileExt(string? name)
+    {
+        var ext = Path.GetExtension(name ?? "").TrimStart('.');
+        return string.IsNullOrEmpty(ext) ? "FILE" : ext.ToUpperInvariant();
+    }
+
+    private static string FileIcon(string? name) => FileExt(name).ToLowerInvariant() switch
+    {
+        "pdf" => "bi-file-earmark-pdf",
+        "doc" or "docx" => "bi-file-earmark-word",
+        "xls" or "xlsx" => "bi-file-earmark-excel",
+        "ppt" or "pptx" => "bi-file-earmark-slides",
+        "zip" => "bi-file-earmark-zip",
+        "png" or "jpg" or "jpeg" => "bi-file-earmark-image",
+        "txt" => "bi-file-earmark-text",
+        _ => "bi-file-earmark"
+    };
+
+    private static string FormatSize(long bytes) =>
+        bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024d:0.#} MB"
+        : bytes >= 1024 ? $"{bytes / 1024d:0} KB"
+        : $"{bytes} B";
+
+    private class ApiError
+    {
+        public string? Message { get; set; }
+    }
+
+    private class ResourceItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string? Description { get; set; }
+        public string Type { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public string? WatchUrl { get; set; }
+        public string? EmbedUrl { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public string? FileUrl { get; set; }
+        public string? OriginalFileName { get; set; }
+        public long? FileSize { get; set; }
+    }
+
+    public void Dispose()
+    {
+        Loc.OnChange -= StateHasChanged;
+    }
+}
