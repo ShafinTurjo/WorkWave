@@ -5,6 +5,8 @@
 @inject AuthStateService AuthState
 @inject NavigationManager Navigation
 @inject LocalizationService Loc
+@inject LocalTimeService LocalTime
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="container mt-4 mb-5">
@@ -27,6 +29,11 @@
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <div class="alert alert-danger py-2 small mb-4">@errorMessage</div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success py-2 small mb-4">@successMessage</div>
         }
 
         <!-- Top Metrics Cards -->
@@ -143,7 +150,7 @@
                                 {
                                     <table class="table table-sm mb-0 align-middle mt-2">
                                         <thead>
-                                            <tr><th>@Loc.T("th_name")</th><th>@Loc.T("th_email")</th><th>@Loc.T("th_applied")</th><th>@Loc.T("th_resume")</th><th>@Loc.T("th_status")</th><th>@Loc.T("th_action")</th></tr>
+                                            <tr><th>@Loc.T("th_name")</th><th>@Loc.T("th_email")</th><th>@Loc.T("th_applied")</th><th>@Loc.T("th_resume")</th><th>@Loc.T("th_status")</th><th>@Loc.T("th_interview")</th><th>@Loc.T("th_action")</th></tr>
                                         </thead>
                                         <tbody>
                                             @foreach (var a in applicants)
@@ -168,6 +175,35 @@
                                                         <span class="badge @StatusBadgeClass(a.Status)">@a.Status</span>
                                                     </td>
                                                     <td>
+                                                        @{ var iv = LatestInterview(a.Id); }
+                                                        @if (iv is not null)
+                                                        {
+                                                            <div class="small mb-1">
+                                                                <div class="fw-semibold">@LocalTime.ToLocal(iv.ScheduledAt).ToString("dd MMM yyyy, hh:mm tt")</div>
+                                                                <span class="badge @InterviewBadgeClass(iv.Status)">@InterviewStatusLabel(iv.Status)</span>
+                                                            </div>
+                                                        }
+                                                        @if (a.Status != StatusRejected)
+                                                        {
+                                                            @if (iv is null || iv.Status == "Cancelled")
+                                                            {
+                                                                <button class="btn btn-sm btn-outline-primary rounded-pill" @onclick="() => OpenModal(a, null)">
+                                                                    <i class="bi bi-calendar-plus me-1"></i>@Loc.T("iv_schedule")
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button class="btn btn-sm btn-outline-secondary rounded-pill me-1" @onclick="() => OpenModal(a, iv)">
+                                                                    <i class="bi bi-pencil me-1"></i>@Loc.T("iv_reschedule")
+                                                                </button>
+                                                                @if (iv.Status == "Scheduled" || iv.Status == "Confirmed")
+                                                                {
+                                                                    <button class="btn btn-sm btn-outline-danger rounded-pill" @onclick="() => CancelInterview(iv)">@Loc.T("iv_cancel")</button>
+                                                                }
+                                                            }
+                                                        }
+                                                    </td>
+                                                    <td>
                                                         @if (a.Status == "Pending")
                                                         {
                                                             <button class="btn btn-sm btn-outline-success me-1 rounded-pill" @onclick="() => UpdateStatus(a, StatusAccepted)">@Loc.T("accept")</button>
@@ -189,6 +225,71 @@
                 }
             </div>
         </div>
+
+        @if (showModal && modalApplication is not null)
+        {
+            <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-4 border-0 shadow">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">@(editingInterview is null ? Loc.T("iv_schedule_title") : Loc.T("iv_reschedule_title"))</h5>
+                            <button type="button" class="btn-close" aria-label="@Loc.T("iv_btn_close")" @onclick="CloseModal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-person-fill me-1"></i>@modalApplication.ApplicantName · @modalApplication.JobTitle
+                            </p>
+
+                            @if (!string.IsNullOrEmpty(modalError))
+                            {
+                                <div class="alert alert-danger py-2 small">@modalError</div>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">@Loc.T("iv_lbl_datetime")</label>
+                                <input type="datetime-local" class="form-control" min="@MinDateTimeValue()" @bind="formDate" />
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">@Loc.T("iv_lbl_duration")</label>
+                                    <select class="form-select" @bind="formDuration">
+                                        @foreach (var d in new[] { 15, 30, 45, 60, 90 })
+                                        {
+                                            <option value="@d">@d @Loc.T("iv_minutes")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-semibold small">@Loc.T("iv_lbl_mode")</label>
+                                    <select class="form-select" @bind="formMode">
+                                        <option value="Online">@Loc.T("iv_mode_online")</option>
+                                        <option value="InPerson">@Loc.T("iv_mode_inperson")</option>
+                                        <option value="Phone">@Loc.T("iv_mode_phone")</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">@LocationLabel()</label>
+                                <input type="text" class="form-control" maxlength="500" @bind="formLocation" />
+                            </div>
+
+                            <div class="mb-1">
+                                <label class="form-label fw-semibold small">@Loc.T("iv_lbl_notes")</label>
+                                <textarea class="form-control" rows="3" maxlength="1000" @bind="formNotes"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button class="btn btn-outline-secondary rounded-pill px-3" @onclick="CloseModal" disabled="@saving">@Loc.T("iv_btn_close")</button>
+                            <button class="btn btn-primary rounded-pill px-4" @onclick="SaveInterview" disabled="@saving">
+                                @(saving ? Loc.T("iv_btn_saving") : Loc.T("iv_btn_save"))
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -207,6 +308,7 @@
     {
         await AuthState.InitializeAsync();
         await Loc.InitializeAsync();
+        await LocalTime.InitializeAsync();
         Loc.OnChange += StateHasChanged;
 
         if (!AuthState.IsLoggedIn)
@@ -272,6 +374,16 @@
         {
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/applications/job/{jobId}");
             if (result is not null) applicants = result;
+
+            try
+            {
+                var ivs = await Http.GetFromJsonAsync<List<InterviewItem>>($"api/interviews/job/{jobId}");
+                interviews = ivs ?? new();
+            }
+            catch (Exception)
+            {
+                interviews = new();
+            }
         }
         catch (Exception)
         {
@@ -404,6 +516,198 @@
         public string Status { get; set; } = "Pending";
         public string? ResumeOriginalFileName { get; set; }
         public string? ResumeUrl { get; set; }
+    }
+
+    // ---------- Interview scheduling ----------
+
+    private List<InterviewItem> interviews = new();
+    private bool showModal;
+    private bool saving;
+    private string? modalError;
+    private string? successMessage;
+    private ApplicationItem? modalApplication;
+    private InterviewItem? editingInterview;
+    private DateTime? formDate;
+    private int formDuration = 30;
+    private string formMode = "Online";
+    private string formLocation = "";
+    private string? formNotes;
+
+    private InterviewItem? LatestInterview(int applicationId) =>
+        interviews.Where(i => i.ApplicationId == applicationId).OrderByDescending(i => i.Id).FirstOrDefault();
+
+    private string MinDateTimeValue() => LocalTime.ToLocal(DateTime.UtcNow).ToString("yyyy-MM-ddTHH:mm");
+
+    private string LocationLabel() => formMode switch
+    {
+        "InPerson" => Loc.T("iv_lbl_location_inperson"),
+        "Phone" => Loc.T("iv_lbl_location_phone"),
+        _ => Loc.T("iv_lbl_location_online")
+    };
+
+    private void OpenModal(ApplicationItem application, InterviewItem? existing)
+    {
+        modalApplication = application;
+        editingInterview = existing;
+        modalError = null;
+        successMessage = null;
+
+        if (existing is null)
+        {
+            formDate = null;
+            formDuration = 30;
+            formMode = "Online";
+            formLocation = "";
+            formNotes = null;
+        }
+        else
+        {
+            formDate = LocalTime.ToLocal(existing.ScheduledAt);
+            formDuration = existing.DurationMinutes;
+            formMode = existing.Mode;
+            formLocation = existing.Location;
+            formNotes = existing.Notes;
+        }
+
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        if (saving) return;
+        showModal = false;
+    }
+
+    private async Task SaveInterview()
+    {
+        modalError = null;
+
+        if (formDate is null) { modalError = Loc.T("iv_err_date_required"); return; }
+        if (string.IsNullOrWhiteSpace(formLocation)) { modalError = Loc.T("iv_err_location_required"); return; }
+
+        var utc = LocalTime.ToUtc(formDate.Value);
+        if (utc <= DateTime.UtcNow) { modalError = Loc.T("iv_err_past"); return; }
+
+        saving = true;
+        try
+        {
+            var payload = new
+            {
+                applicationId = modalApplication!.Id,
+                scheduledAt = utc,
+                durationMinutes = formDuration,
+                mode = formMode,
+                location = formLocation.Trim(),
+                notes = formNotes,
+                utcOffsetMinutes = LocalTime.OffsetMinutes
+            };
+
+            var response = editingInterview is null
+                ? await Http.PostAsJsonAsync("api/interviews", payload)
+                : await Http.PutAsJsonAsync($"api/interviews/{editingInterview.Id}", payload);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var saved = await response.Content.ReadFromJsonAsync<InterviewItem>();
+                if (saved is not null)
+                {
+                    interviews.RemoveAll(i => i.Id == saved.Id);
+                    interviews.Insert(0, saved);
+                }
+                showModal = false;
+                successMessage = Loc.T("iv_msg_saved");
+            }
+            else
+            {
+                modalError = await ReadApiError(response) ?? Loc.T("iv_err_generic");
+            }
+        }
+        catch (Exception)
+        {
+            modalError = Loc.T("err_server_unreachable");
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task CancelInterview(InterviewItem interview)
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc.T("iv_cancel_confirm"));
+        if (!confirmed) return;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/interviews/{interview.Id}/cancel?utcOffsetMinutes={LocalTime.OffsetMinutes}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                interview.Status = "Cancelled";
+                successMessage = Loc.T("iv_msg_cancelled");
+            }
+            else
+            {
+                errorMessage = await ReadApiError(response) ?? Loc.T("iv_err_generic");
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = Loc.T("err_server_unreachable");
+        }
+    }
+
+    private static async Task<string?> ReadApiError(HttpResponseMessage response)
+    {
+        try
+        {
+            var err = await response.Content.ReadFromJsonAsync<ApiError>();
+            return err?.Message;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string InterviewStatusLabel(string status) => status switch
+    {
+        "Confirmed" => Loc.T("iv_status_confirmed"),
+        "Declined" => Loc.T("iv_status_declined"),
+        "Cancelled" => Loc.T("iv_status_cancelled"),
+        _ => Loc.T("iv_status_scheduled")
+    };
+
+    private static string InterviewBadgeClass(string status) => status switch
+    {
+        "Confirmed" => "bg-success-subtle text-success border border-success-subtle rounded-pill",
+        "Declined" => "bg-danger-subtle text-danger border border-danger-subtle rounded-pill",
+        "Cancelled" => "bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill",
+        _ => "bg-info-subtle text-info-emphasis border border-info-subtle rounded-pill"
+    };
+
+    private class ApiError
+    {
+        public string? Message { get; set; }
+    }
+
+    private class InterviewItem
+    {
+        public int Id { get; set; }
+        public int ApplicationId { get; set; }
+        public int JobId { get; set; }
+        public string JobTitle { get; set; } = "";
+        public string Company { get; set; } = "";
+        public string ApplicantName { get; set; } = "";
+        public string ApplicantEmail { get; set; } = "";
+        public DateTime ScheduledAt { get; set; }
+        public int DurationMinutes { get; set; }
+        public string Mode { get; set; } = "Online";
+        public string Location { get; set; } = "";
+        public string? Notes { get; set; }
+        public string Status { get; set; } = "Scheduled";
     }
 
     public void Dispose()

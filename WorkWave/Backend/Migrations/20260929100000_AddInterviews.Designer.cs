@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260929100000_AddInterviews")]
+    partial class AddInterviews
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,14 +45,15 @@ namespace Backend.Migrations
                     b.Property<int>("JobApplicationId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("LocationOrLink")
+                    b.Property<string>("Location")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
                     b.Property<string>("Mode")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -62,6 +66,9 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -408,17 +415,6 @@ namespace Backend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Backend.Models.Interview", b =>
-                {
-                    b.HasOne("Backend.Models.JobApplication", "JobApplication")
-                        .WithMany()
-                        .HasForeignKey("JobApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("JobApplication");
-                });
-
             modelBuilder.Entity("Backend.Models.Job", b =>
                 {
                     b.HasOne("Backend.Models.User", "PostedByUser")
@@ -428,6 +424,17 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("PostedByUser");
+                });
+
+            modelBuilder.Entity("Backend.Models.Interview", b =>
+                {
+                    b.HasOne("Backend.Models.JobApplication", "JobApplication")
+                        .WithMany()
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobApplication");
                 });
 
             modelBuilder.Entity("Backend.Models.JobApplication", b =>

@@ -22,5 +22,6 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<AuthStateService>();
 builder.Services.AddScoped<LocalizationService>();
+builder.Services.AddScoped<LocalTimeService>();
 builder.Services.AddScoped<PaymentAccessService>();
 await builder.Build().RunAsync();

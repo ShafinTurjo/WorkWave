@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Resume> Resumes => Set<Resume>();
     public DbSet<JobReport> JobReports => Set<JobReport>();
     public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<Interview> Interviews => Set<Interview>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +53,13 @@ public class ApplicationDbContext : DbContext
             .HasOne(r => r.User)
             .WithMany()
             .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Interview Relationship with JobApplication
+        modelBuilder.Entity<Interview>()
+            .HasOne(i => i.JobApplication)
+            .WithMany()
+            .HasForeignKey(i => i.JobApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // JobReport Relationship Configuration

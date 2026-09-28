@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @inject LocalizationService Loc
+@inject LocalTimeService LocalTime
 @implements IDisposable
 
 <div class="container mt-4 mb-5">
@@ -72,6 +73,71 @@
         <div class="row g-4">
 
             <div class="col-lg-8">
+                @if (interviews.Count > 0)
+                {
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white fw-bold py-3">
+                            <i class="bi bi-calendar-event me-1 text-primary"></i> @Loc.T("iv_my_interviews")
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(interviewError))
+                            {
+                                <div class="alert alert-danger py-2 small">@interviewError</div>
+                            }
+                            @foreach (var iv in interviews)
+                            {
+                                var isPast = iv.ScheduledAt < DateTime.UtcNow;
+                                var canRespond = !isPast && (iv.Status == "Scheduled" || iv.Status == "Confirmed" || iv.Status == "Declined");
+                                <div class="border rounded-3 p-3 mb-3 @(iv.Status == "Cancelled" ? "bg-light" : "")">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div>
+                                            <div class="fw-bold">@iv.JobTitle <span class="text-muted fw-normal">· @iv.Company</span></div>
+                                            <div class="small mt-1">
+                                                <i class="bi bi-clock me-1"></i>@LocalTime.ToLocal(iv.ScheduledAt).ToString("ddd, dd MMM yyyy · hh:mm tt")
+                                                <span class="text-muted">(@iv.DurationMinutes @Loc.T("iv_minutes"))</span>
+                                            </div>
+                                            <div class="small">
+                                                <i class="bi @ModeIcon(iv.Mode) me-1"></i>@ModeLabel(iv.Mode) ·
+                                                @if (iv.Mode == "Online" && iv.Location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    <a href="@iv.Location" target="_blank" rel="noopener">@Loc.T("iv_join_link")</a>
+                                                }
+                                                else
+                                                {
+                                                    <span>@iv.Location</span>
+                                                }
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(iv.Notes))
+                                            {
+                                                <div class="small text-muted mt-1"><strong>@Loc.T("iv_notes_label")</strong> @iv.Notes</div>
+                                            }
+                                        </div>
+                                        <span class="badge @InterviewBadgeClass(iv.Status) align-self-start">@InterviewStatusLabel(iv.Status)</span>
+                                    </div>
+
+                                    @if (canRespond)
+                                    {
+                                        <div class="mt-3 d-flex gap-2">
+                                            @if (iv.Status != "Confirmed")
+                                            {
+                                                <button class="btn btn-sm btn-success" disabled="@(respondingId == iv.Id)" @onclick="() => Respond(iv, true)">
+                                                    <i class="bi bi-check-lg me-1"></i>@Loc.T("iv_confirm")
+                                                </button>
+                                            }
+                                            @if (iv.Status != "Declined")
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger" disabled="@(respondingId == iv.Id)" @onclick="() => Respond(iv, false)">
+                                                    <i class="bi bi-x-lg me-1"></i>@Loc.T("iv_decline")
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-card-checklist me-1 text-primary"></i> @Loc.T("my_applications")</span>
@@ -169,6 +235,7 @@
     {
         await AuthState.InitializeAsync();
         await Loc.InitializeAsync();
+        await LocalTime.InitializeAsync();
         Loc.OnChange += StateHasChanged;
 
         if (!AuthState.IsLoggedIn)
@@ -190,6 +257,24 @@
 
             var result = await Http.GetFromJsonAsync<List<ApplicationItem>>($"api/applications/user/{AuthState.UserId}");
             if (result is not null) applications = result;
+
+            try
+            {
+                var ivs = await Http.GetFromJsonAsync<List<InterviewItem>>("api/interviews/mine");
+                if (ivs is not null)
+                {
+                    // Upcoming first, then past ones; hide old entries so the list stays short.
+                    var cutoff = DateTime.UtcNow.AddDays(-1);
+                    interviews = ivs
+                        .Where(i => i.ScheduledAt >= cutoff)
+                        .OrderBy(i => i.ScheduledAt)
+                        .ToList();
+                }
+            }
+            catch (Exception)
+            {
+                // Interviews are optional on this page; ignore load errors.
+            }
 
             
             var resumeResponse = await Http.GetAsync($"api/resume/{AuthState.UserId}");
@@ -244,6 +329,88 @@
         public string? ResumeUrl { get; set; }
 
         public int MatchScore { get; set; } = 0;
+    }
+
+    // ---------- Interviews ----------
+
+    private List<InterviewItem> interviews = new();
+    private string? interviewError;
+    private int? respondingId;
+
+    private async Task Respond(InterviewItem interview, bool confirm)
+    {
+        interviewError = null;
+        respondingId = interview.Id;
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/interviews/{interview.Id}/respond", new
+            {
+                confirm,
+                utcOffsetMinutes = LocalTime.OffsetMinutes
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                interview.Status = confirm ? "Confirmed" : "Declined";
+            }
+            else
+            {
+                interviewError = Loc.T("iv_err_respond");
+            }
+        }
+        catch (Exception)
+        {
+            interviewError = Loc.T("err_server_unreachable");
+        }
+        finally
+        {
+            respondingId = null;
+        }
+    }
+
+    private string InterviewStatusLabel(string status) => status switch
+    {
+        "Confirmed" => Loc.T("iv_status_confirmed"),
+        "Declined" => Loc.T("iv_status_declined"),
+        "Cancelled" => Loc.T("iv_status_cancelled"),
+        _ => Loc.T("iv_status_scheduled")
+    };
+
+    private static string InterviewBadgeClass(string status) => status switch
+    {
+        "Confirmed" => "bg-success-subtle text-success border border-success-subtle",
+        "Declined" => "bg-danger-subtle text-danger border border-danger-subtle",
+        "Cancelled" => "bg-secondary-subtle text-secondary border border-secondary-subtle",
+        _ => "bg-info-subtle text-info-emphasis border border-info-subtle"
+    };
+
+    private string ModeLabel(string mode) => mode switch
+    {
+        "InPerson" => Loc.T("iv_mode_inperson"),
+        "Phone" => Loc.T("iv_mode_phone"),
+        _ => Loc.T("iv_mode_online")
+    };
+
+    private static string ModeIcon(string mode) => mode switch
+    {
+        "InPerson" => "bi-geo-alt",
+        "Phone" => "bi-telephone",
+        _ => "bi-camera-video"
+    };
+
+    private class InterviewItem
+    {
+        public int Id { get; set; }
+        public int ApplicationId { get; set; }
+        public int JobId { get; set; }
+        public string JobTitle { get; set; } = "";
+        public string Company { get; set; } = "";
+        public DateTime ScheduledAt { get; set; }
+        public int DurationMinutes { get; set; }
+        public string Mode { get; set; } = "Online";
+        public string Location { get; set; } = "";
+        public string? Notes { get; set; }
+        public string Status { get; set; } = "Scheduled";
     }
 
     public void Dispose()
