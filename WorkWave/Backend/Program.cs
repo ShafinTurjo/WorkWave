@@ -86,11 +86,12 @@ if (allowedOrigins.Length == devOrigins.Length && !app.Environment.IsDevelopment
             "Set the Email__Enabled=true environment variable.");
     }
     else if (string.IsNullOrWhiteSpace(app.Configuration["Mailjet:ApiKey"]) ||
-             string.IsNullOrWhiteSpace(emailOpts.SenderEmail))
-    {
-        app.Logger.LogWarning(
-            "Email is enabled but Mailjet__ApiKey and/or Email__SenderEmail is missing — emails will be skipped.");
-    }
+         string.IsNullOrWhiteSpace(app.Configuration["Mailjet:ApiSecret"]) ||
+         string.IsNullOrWhiteSpace(emailOpts.SenderEmail))
+{
+    app.Logger.LogWarning(
+        "Email is enabled but Mailjet__ApiKey, Mailjet__ApiSecret and/or Email__SenderEmail is missing — emails will be skipped.");
+}
 
     var frontendUrl = app.Configuration["FrontendBaseUrl"] ?? "";
     if (!app.Environment.IsDevelopment() && frontendUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
