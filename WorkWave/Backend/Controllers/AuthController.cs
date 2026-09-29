@@ -1,3 +1,4 @@
+using System.Net;
 using Backend.Data;
 using Backend.Dtos;
 using Backend.Models;
@@ -145,12 +146,13 @@ public class AuthController : ControllerBase
 
     private async Task SendVerificationEmailAsync(User user)
     {
-        var frontendBaseUrl = _config["FrontendBaseUrl"] ?? "https://localhost:7174";
-        var link = $"{frontendBaseUrl}/verify-email?email={Uri.EscapeDataString(user.Email)}&token={user.EmailVerificationToken}";
+        // TrimEnd avoids "https://host/WorkWave//verify-email" when the setting ends with a slash.
+        var frontendBaseUrl = (_config["FrontendBaseUrl"] ?? "https://localhost:7174").TrimEnd('/');
+        var link = $"{frontendBaseUrl}/verify-email?email={Uri.EscapeDataString(user.Email)}&token={Uri.EscapeDataString(user.EmailVerificationToken ?? "")}";
 
         var subject = "Verify your WorkWave email address";
         var body = $"""
-            <p>Hi {user.FullName},</p>
+            <p>Hi {WebUtility.HtmlEncode(user.FullName)},</p>
             <p>Thanks for signing up for WorkWave. Please confirm your email address by clicking the link below:</p>
             <p><a href="{link}">Verify my email</a></p>
             <p>This link expires in 24 hours. If you didn't create a WorkWave account, you can ignore this email.</p>

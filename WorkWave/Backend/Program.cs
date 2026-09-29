@@ -22,7 +22,7 @@ builder.Services.Configure<EmailOptions>(
 builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection("Jwt"));
 
-builder.Services.AddHttpClient<IEmailService, BrevoEmailService>(c => c.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddHttpClient<IEmailService, MailjetEmailService>(c => c.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
@@ -74,6 +74,31 @@ if (allowedOrigins.Length == devOrigins.Length && !app.Environment.IsDevelopment
     app.Logger.LogWarning(
         "No production origins configured in 'AllowedOrigins' — only localhost is allowed by CORS. " +
         "The deployed frontend will be blocked from calling this API until you add its URL.");
+}
+
+// ---- Email configuration sanity check: makes silent "mail never arrives" problems visible in the logs ----
+{
+    var emailOpts = app.Configuration.GetSection("Email").Get<EmailOptions>() ?? new EmailOptions();
+    if (!emailOpts.Enabled)
+    {
+        app.Logger.LogWarning(
+            "Email:Enabled is false — NO emails (verification, password reset, interview) will be sent. " +
+            "Set the Email__Enabled=true environment variable.");
+    }
+    else if (string.IsNullOrWhiteSpace(app.Configuration["Mailjet:ApiKey"]) ||
+             string.IsNullOrWhiteSpace(emailOpts.SenderEmail))
+    {
+        app.Logger.LogWarning(
+            "Email is enabled but Mailjet__ApiKey and/or Email__SenderEmail is missing — emails will be skipped.");
+    }
+
+    var frontendUrl = app.Configuration["FrontendBaseUrl"] ?? "";
+    if (!app.Environment.IsDevelopment() && frontendUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+    {
+        app.Logger.LogWarning(
+            "FrontendBaseUrl is '{Url}' — verification / reset links in emails will point to localhost. " +
+            "Set FrontendBaseUrl to the deployed frontend URL (e.g. https://shafinturjo.github.io/WorkWave).", frontendUrl);
+    }
 }
 
 var applyMigrationsOnStartup = builder.Configuration.GetValue("ApplyMigrationsOnStartup", true);
